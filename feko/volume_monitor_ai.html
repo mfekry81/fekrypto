@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Volume Monitor (Enhanced)</title>
+
+  <!-- Bulma CSS -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.6.2/css/bulma.min.css">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+
+  <style>
+    body { background: #f9f9f9; }
+    .navbar { margin-bottom: 2rem; }
+    .title { font-size: 2rem; }
+    .box { margin-bottom: 1rem; }
+    table th, table td { text-align: center; }
+    .is-buy { background-color: #d4f8d4; }
+    .is-sell { background-color: #ffd4d4; }
+  </style>
+</head>
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar has-shadow is-dark">
+    <div class="navbar-brand">
+      <a class="navbar-item">
+        <span class="icon"><i class="fa fa-line-chart"></i></span>
+        <span> AI Volume Monitor </span>
+      </a>
+    </div>
+  </nav>
+
+  <section class="section">
+    <div class="container">
+
+      <!-- Original Table (Ping Coins Monitor) -->
+      <div class="card">
+        <div class="card-content">
+          <h3 class="title is-4">Ping Coins Monitor</h3>
+          <table class="table is-bordered is-fullwidth" id="pinger">
+            <thead>
+              <tr>
+                <th>Coin</th>
+                <th>Pings</th>
+                <th>Net Vol BTC</th>
+                <th>Net Vol %</th>
+                <th>Recent Total Vol BTC</th>
+                <th>Recent Vol %</th>
+                <th>Recent Net Vol</th>
+                <th>Datetime (UTC)</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- New Section: Selected Coin Data -->
+      <div class="box">
+        <label class="label">Select Coin</label>
+        <div class="select">
+          <select id="coinSelector">
+            <option value="BTCUSDT">BTC/USDT</option>
+            <option value="ETHUSDT">ETH/USDT</option>
+            <option value="BNBUSDT">BNB/USDT</option>
+            <option value="GALAUSDT">GALA/USDT</option>
+          </select>
+        </div>
+        <button class="button is-info" id="loadData">Load Data</button>
+      </div>
+
+      <div class="card">
+        <div class="card-content">
+          <h3 class="title is-4">Selected Coin Data</h3>
+          <table class="table is-bordered is-fullwidth" id="coinTable">
+            <thead>
+              <tr>
+                <th>Coin</th>
+                <th>Pings</th>
+                <th>Net Vol BTC</th>
+                <th>Net Vol %</th>
+                <th>Recent Total Vol BTC</th>
+                <th>Recent Vol %</th>
+                <th>Recent Net Vol</th>
+                <th>Datetime (UTC)</th>
+                <th>AI Signal</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- jQuery -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+
+  <script>
+    // Mock ChatGPT-F Enhancer Logic
+    function aiSignalEnhancer(netVolBTC, netVolPercent) {
+      if (netVolBTC > 0 && netVolPercent > 2) {
+        return { signal: "BUY", css: "is-buy" };
+      } else if (netVolBTC < 0 && netVolPercent < -2) {
+        return { signal: "SELL", css: "is-sell" };
+      } else {
+        return { signal: "HOLD", css: "" };
+      }
+    }
+
+    function fetchCoinData(coin) {
+      const url = `https://api.binance.com/api/v3/ticker/24hr?symbol=${coin}`;
+      
+      $.getJSON(url, function(data) {
+        const netVolBTC = (parseFloat(data.volume) - parseFloat(data.quoteVolume)) / 1000; // Mock calc
+        const netVolPercent = parseFloat(data.priceChangePercent);
+        const pings = Math.floor(Math.random() * 10);
+        const recentVol = parseFloat(data.volume).toFixed(2);
+        const datetime = new Date().toISOString();
+
+        const ai = aiSignalEnhancer(netVolBTC, netVolPercent);
+
+        const row = `
+          <tr class="${ai.css}">
+            <td>${coin}</td>
+            <td>${pings}</td>
+            <td>${netVolBTC.toFixed(2)}</td>
+            <td>${netVolPercent.toFixed(2)}%</td>
+            <td>${recentVol}</td>
+            <td>${(Math.random() * 5).toFixed(2)}%</td>
+            <td>${(netVolBTC / 2).toFixed(2)}</td>
+            <td>${datetime}</td>
+            <td><b>${ai.signal}</b></td>
+          </tr>
+        `;
+
+        $("#coinTable tbody").prepend(row);
+
+        if ($("#coinTable tbody tr").length > 20) {
+          $("#coinTable tbody tr:last").remove();
+        }
+      });
+    }
+
+    $(document).ready(function() {
+      $('#loadData').click(function(){
+        const coin = $('#coinSelector').val();
+        fetchCoinData(coin);
+      });
+
+      setInterval(function(){
+        const coin = $('#coinSelector').val();
+        fetchCoinData(coin);
+      }, 60000);
+    });
+  </script>
+</body>
+</html>
