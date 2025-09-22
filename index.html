@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Binance Real-Time Dashboard v3</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #111; color: #eee; margin: 0; padding: 20px; }
+    .container { max-width: 1800px; margin: 0 auto; }
+    h2, h3 { text-align: center; color: #f0b90b; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; background: #1e2329; }
+    th, td { padding: 10px; text-align: center; border: 1px solid #2b3139; }
+    th { background: #181b20; cursor: pointer; position: relative; font-weight: bold; color: #eaecef; }
+    th:hover { background: #2b3139; }
+    .green { color: #03a66d; font-weight: bold; }
+    .red { color: #e74c3c; font-weight: bold; }
+    .neutral { color: #848e9c; }
+    .yellow { color: #f0b90b; font-weight: bold; }
+    .blue { color: #3498db; font-weight: bold; }
+    .orange { color: #f39c12; font-weight: bold; }
+    #marketTable { max-height: 600px; overflow-y: scroll; display: block; margin-top: 15px; }
+    #searchBox { margin: 10px auto; display: block; padding: 10px; width: 300px; background: #1e2329; color: #eaecef; border: 1px solid #2b3139; border-radius: 4px; }
+    .sort-indicator { margin-left: 5px; font-size: 12px; }
+    .best-buy { background: linear-gradient(to right, rgba(3, 166, 109, 0.15), transparent); }
+    .pump-signal { animation: pulse 2s infinite; }
+    .positive-ping { background-color: rgba(243, 156, 18, 0.15); }
+    @keyframes pulse {
+      0% { background-color: rgba(3, 166, 109, 0.15); }
+      50% { background-color: rgba(3, 166, 109, 0.25); }
+      100% { background-color: rgba(3, 166, 109, 0.15); }
+    }
+    .header-container { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding: 10px; background: #1e2329; border-radius: 4px; }
+    .last-updated { font-size: 14px; color: #848e9c; }
+    .controls { display: flex; gap: 10px; margin-bottom: 15px; justify-content: center; }
+    .control-btn { background: #2b3139; color: #eaecef; border: 1px solid #3c4350; padding: 8px 16px; cursor: pointer; border-radius: 4px; font-weight: bold; }
+    .control-btn:hover { background: #3c4350; }
+    .ping-1 { background-color: rgba(3, 166, 109, 0.1); }
+    .ping-2 { background-color: rgba(3, 166, 109, 0.2); }
+    .ping-3 { background-color: rgba(243, 156, 18, 0.3); }
+    .ping-4 { background-color: rgba(243, 156, 18, 0.4); }
+    .ping-5 { background-color: rgba(230, 126, 34, 0.5); }
+    .volume-bar { 
+      height: 4px; 
+      background: #03a66d; 
+      width: 0%; 
+      transition: width 0.5s ease;
+      margin-top: 4px;
+      border-radius: 2px;
+    }
+    .volume-info { font-size: 11px; color: #848e9c; margin-top: 3px; }
+    .progress-container {
+      width: 100%;
+      background-color: #2b3139;
+      border-radius: 4px;
+      margin: 5px 0;
+    }
+    .progress-bar {
+      height: 6px;
+      background-color: #f0b90b;
+      border-radius: 4px;
+      width: 0%;
+      transition: width 0.5s ease;
+    }
+    .section-title {
+      background: linear-gradient(90deg, #1e2329, #2b3139);
+      padding: 12px;
+      border-radius: 4px;
+      margin: 15px 0;
+      border-left: 4px solid #f0b90b;
+    }
+    .highlight { animation: highlight 1.5s ease; }
+    @keyframes highlight {
+      0% { background-color: rgba(243, 156, 18, 0.3); }
+      100% { background-color: transparent; }
+    }
+  </style>
+</head>
+<body>
+  <div class="title">
+    <div class="header-title">
+      <h2>🚀 Binance Real-Time Dashboard - by @f3kry</h2>
+      </div>
+      <div class="last-updated" id="datetime"></div>
+    </div>
+
+    <div class="section-title">
+      <h3>Top 10 Cryptocurrencies by Market Cap</h3>
+    </div>
+
+    <table id="coinsTable">
+      <thead>
+        <tr>
+          <th data-sort="string">Symbol</th>
+          <th data-sort="number">Price (USDT)</th>
+          <th data-sort="number">Change 5m</th>
+          <th data-sort="number">Change 15m</th>
+          <th data-sort="number">Change 1h</th>
+          <th data-sort="number">Change 4h</th>
+          <th data-sort="number">Change 24h</th>
+          <th data-sort="number">Ping</th>
+          <th data-sort="number">Volume 5m</th>
+          <th data-sort="number">AI Score</th>
+          <th data-sort="string">AI Prediction</th>
+          <th data-sort="number">Best Buy</th>
+          <th data-sort="number">Last Update</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <div class="section-title">
+      <h3>📊 Full Binance USDT Spot Market Watch</h3>
+    </div>
+    
+    <div class="controls">
+      <input type="text" id="searchBox" placeholder="🔍 Search Coin (e.g. BTCUSDT)">
+      <button class="control-btn" id="refreshMarket">Refresh Data</button>
+      <button class="control-btn" id="togglePing">Show Ping Details</button>
+    </div>
+    
+    <div id="marketTable">
+      <table id="marketTableInner">
+        <thead>
+          <tr>
+            <th data-sort="string">Symbol</th>
+            <th data-sort="number">Price (USDT)</th>
+            <th data-sort="number">Change 5m</th>
+            <th data-sort="number">Change 15m</th>
+            <th data-sort="number">Change 1h</th>
+            <th data-sort="number">Change 4h</th>
+            <th data-sort="number">Change 24h</th>
+            <th data-sort="number">Ping</th>
+            <th data-sort="number">Volume 5m</th>
+            <th data-sort="number">AI Score</th>
+            <th data-sort="string">AI Prediction</th>
+            <th data-sort="number">Best Buy</th>
+            <th data-sort="number">Last Update</th>
+          </tr>
+        </thead>
+        <tbody id="marketBody"></tbody>
+      </table>
+    </div>
+
+    <div style="margin-top: 20px; padding: 15px; background: #1e2329; border-radius: 4px; font-size: 13px;">
+      <h4>Follow @f3kry [X, Telegram] - if you liked the script or have ideas DM me!</h4>
+      <h4>Volume Ping System Explanation:</h4>
+      <p>The Ping system tracks 5-minute candles with volume exceeding 1 million USDT:</p>
+      <ul>
+        <li><span class="green">Ping 1-2</span>: Moderate volume activity</li>
+        <li><span class="yellow">Ping 3-4</span>: High volume activity - potential momentum building</li>
+        <li><span class="orange">Ping 5+</span>: Very high volume activity - strong momentum signal</li>
+      </ul>
+      <p>Each consecutive 5-minute candle with volume >1M increases the Ping counter. The counter resets if volume drops below this threshold.</p>
+    </div>
+  </div>
+
+  <script>
+    // Update datetime display
+    function updateDateTime() {
+      const now = new Date();
+      const options = { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      };
+      document.getElementById('datetime').textContent = "Last updated: " + now.toLocaleDateString('en-US', options);
+    }
+    
+    updateDateTime();
+    setInterval(updateDateTime, 1000);
+
+    const tableBody = document.querySelector("#coinsTable tbody");
+    const marketBody = document.getElementById("marketBody");
+    const searchBox = document.getElementById("searchBox");
+    const refreshMarketBtn = document.getElementById("refreshMarket");
+    const togglePingBtn = document.getElementById("togglePing");
+
+    const symbols = ["BTCUSDT","ETHUSDT","BNBUSDT","SOLUSDT","XRPUSDT","KAVAUSDT","AVAXUSDT","SUIUSDT","SEIUSDT","YGGUSDT"];
+    const history = {};
+    const lastSignals = {};
+    const pingData = {}; // Store ping data for each symbol
+    const candleData = {}; // Store 5-minute candle data
+    
+    // Separate sorting states for both tables
+    const sortStates = {
+      top10: { column: 6, direction: 'desc' }, // Default sort by 24h change (index 6)
+      market: { column: 6, direction: 'desc' }
+    };
+
+    // Add sorting functionality
+    function addSortingListeners() {
+      // Top 10 table sorting
+      document.querySelectorAll('#coinsTable th[data-sort]').forEach(header => {
+        header.addEventListener('click', () => {
+          const columnIndex = Array.from(header.parentElement.children).indexOf(header);
+          const sortType = header.getAttribute('data-sort');
+          const tbody = document.querySelector("#coinsTable tbody");
+          
+          // Update sort indicator
+          document.querySelectorAll('#coinsTable .sort-indicator').forEach(ind => {
+            ind.textContent = '';
+          });
+          
+          // Determine new sort direction
+          let direction = 'asc';
+          if (sortStates.top10.column === columnIndex) {
+            direction = sortStates.top10.direction === 'asc' ? 'desc' : 'asc';
+          }
+          
+          // Add sort indicator
+          header.innerHTML = header.textContent + `<span class="sort-indicator">${direction === 'asc' ? ' ↑' : ' ↓'}</span>`;
+          
+          // Sort the table
+          sortTable(tbody, columnIndex, sortType, direction, 'top10');
+          
+          // Update current sort state
+          sortStates.top10 = { column: columnIndex, direction };
+        });
+      });
+      
+      // Market table sorting
+      document.querySelectorAll('#marketTableInner th[data-sort]').forEach(header => {
+        header.addEventListener('click', () => {
+          const columnIndex = Array.from(header.parentElement.children).indexOf(header);
+          const sortType = header.getAttribute('data-sort');
+          const tbody = document.getElementById("marketBody");
+          
+          // Update sort indicator
+          document.querySelectorAll('#marketTableInner .sort-indicator').forEach(ind => {
+            ind.textContent = '';
+          });
+          
+          // Determine new sort direction
+          let direction = 'asc';
+          if (sortStates.market.column === columnIndex) {
+            direction = sortStates.market.direction === 'asc' ? 'desc' : 'asc';
+          }
+          
+          // Add sort indicator
+          header.innerHTML = header.textContent + `<span class="sort-indicator">${direction === 'asc' ? ' ↑' : ' ↓'}</span>`;
+          
+          // Sort the table
+          sortTable(tbody, columnIndex, sortType, direction, 'market');
+          
+          // Update current sort state
+          sortStates.market = { column: columnIndex, direction };
+        });
+      });
+    }
+    
+    // Sort table function
+    function sortTable(tbody, columnIndex, sortType, direction, tableType) {
+      const rows = Array.from(tbody.querySelectorAll('tr'));
+      
+      rows.sort((a, b) => {
+        let aValue = a.cells[columnIndex].getAttribute('data-value') || a.cells[columnIndex].textContent;
+        let bValue = b.cells[columnIndex].getAttribute('data-value') || b.cells[columnIndex].textContent;
+        
+        if (sortType === 'number') {
+          aValue = parseFloat(aValue) || 0;
+          bValue = parseFloat(bValue) || 0;
+        } else {
+          aValue = aValue.toString();
+          bValue = bValue.toString();
+        }
+        
+        if (aValue < bValue) return direction === 'asc' ? -1 : 1;
+        if (aValue > bValue) return direction === 'asc' ? 1 : -1;
+        return 0;
+      });
+      
+      // Remove existing rows
+      while (tbody.firstChild) {
+        tbody.removeChild(tbody.firstChild);
+      }
+      
+      // Add sorted rows
+      rows.forEach(row => tbody.appendChild(row));
+      
+      // Update sort state
+      sortStates[tableType] = { column: columnIndex, direction };
+    }
+
+    function percentChange(oldPrice, newPrice) {
+      return ((newPrice - oldPrice) / oldPrice * 100).toFixed(2);
+    }
+    
+    function formatChange(value) {
+      const num = parseFloat(value);
+      if (isNaN(num)) return `<span class="neutral">0%</span>`;
+      return num >= 0 
+        ? `<span class="green">+${num}%</span>` 
+        : `<span class="red">${num}%</span>`;
+    }
+    
+    // Format large numbers with K, M, B suffixes
+    function formatNumber(num) {
+      if (num >= 1000000000) {
+        return (num / 1000000000).toFixed(2) + 'B';
+      }
+      if (num >= 1000000) {
+        return (num / 1000000).toFixed(2) + 'M';
+      }
+      if (num >= 1000) {
+        return (num / 1000).toFixed(2) + 'K';
+      }
+      return num.toFixed(2);
+    }
+    
+    // Initialize 5-minute candle data for a symbol
+    function initCandleData(symbol) {
+      if (!candleData[symbol]) {
+        candleData[symbol] = {
+          currentCandle: { volume: 0, startTime: null },
+          completedCandles: [],
+          ping: 0,
+          lastPingUpdate: null
+        };
+      }
+      return candleData[symbol];
+    }
+    
+    // Update 5-minute candle with latest trade data
+    function updateCandleWithVolume(symbol, price, volume, timestamp) {
+      const data = initCandleData(symbol);
+      const candleStart = Math.floor(timestamp / 300000) * 300000; // 5-minute interval
+      
+      // Initialize candle if needed
+      if (data.currentCandle.startTime === null) {
+        data.currentCandle = { volume: 0, startTime: candleStart };
+      }
+      
+      // Check if we need to start a new candle
+      if (candleStart > data.currentCandle.startTime) {
+        // Candle completed - check if volume exceeds threshold
+        if (data.currentCandle.volume > 1000000) {
+          data.ping++;
+          data.lastPingUpdate = Date.now();
+        } else {
+          data.ping = 0;
+        }
+        
+        // Store completed candle
+        data.completedCandles.push({
+          volume: data.currentCandle.volume,
+          startTime: data.currentCandle.startTime
+        });
+        
+        // Keep only recent history
+        if (data.completedCandles.length > 20) {
+          data.completedCandles.shift();
+        }
+        
+        // Start new candle
+        data.currentCandle = {
+          volume: 0,
+          startTime: candleStart
+        };
+      }
+      
+      // Add volume to current candle (volume is in quote currency - USDT)
+      data.currentCandle.volume += volume;
+      
+      return data.ping;
+    }
+    
+    // Format ping value with color and tooltip
+    function formatPing(value, volume) {
+      if (value >= 5) return `<span class="orange" title="Very high volume activity - strong momentum">${value} 🚀</span>`;
+      if (value >= 3) return `<span class="yellow" title="High volume activity - momentum building">${value} ↑</span>`;
+      if (value >= 1) return `<span class="green" title="Moderate volume activity">${value}</span>`;
+      return `<span class="neutral" title="No significant volume activity">0</span>`;
+    }
+    
+    // Create a visual volume indicator
+    function createVolumeIndicator(volume, threshold) {
+      const percentage = Math.min(100, (volume / threshold) * 100);
+      return `
+        <div class="progress-container">
+          <div class="progress-bar" style="width: ${percentage}%"></div>
+        </div>
+        <div class="volume-info">${formatNumber(volume)} / 1M</div>
+      `;
+    }
+    
+    // Enhanced AI scoring with best buy signal and volume ping integration
+    function aiScore(ch5m, ch15m, ch1h, ch4h, ch24, volume, price, symbol, ping) {
+      const c5m = parseFloat(ch5m), c15m = parseFloat(ch15m), c1h = parseFloat(ch1h), c4h = parseFloat(ch4h), c24h = parseFloat(ch24);
+      let score = 50;
+      
+      // Weighted changes with more emphasis on shorter timeframes
+      score += c5m * 2.0;
+      score += c15m * 1.5;
+      score += c1h * 1.2;
+      score += c4h * 1.0;
+      score += c24h * 0.8;
+      
+      // Volume boost (higher volume is better)
+      if (volume > 1000000000) score += 15;
+      else if (volume > 500000000) score += 10;
+      else if (volume > 100000000) score += 5;
+      
+      // Price stability consideration (less volatility is better for buy signals)
+      const volatility = Math.abs(c5m) + Math.abs(c15m) + Math.abs(c1h) + Math.abs(c4h) + Math.abs(c24h);
+      if (volatility < 5) score += 5;
+      
+      // Recent positive momentum bonus
+      if (c5m > 0 && c15m > 0) score += 10;
+      else if (c5m > 0) score += 7;
+      else if (c15m > 0) score += 5;
+      
+      // Volume ping bonus - consecutive 5m candles with high volume
+      if (ping >= 5) score += 25;
+      else if (ping >= 3) score += 15;
+      else if (ping >= 1) score += 8;
+      
+      score = Math.max(0, Math.min(100, score));
+      
+      let signal = "Neutral";
+      if (score >= 85) signal = "Strong Pump 🚀";
+      else if (score >= 70) signal = "Potential Pump";
+      else if (score >= 60) signal = "Slight Bullish";
+      else if (score <= 20) signal = "Strong Dump 📉";
+      else if (score <= 40) signal = "Bearish 📉";
+      
+      // Enhanced best buy signal logic with volume ping integration
+      let bestBuyScore = 0;
+      if (score >= 75 && c5m > 0.5 && c15m > 0) bestBuyScore += 25;
+      if (c1h > 1 && c4h > 2 && c24h > 5) bestBuyScore += 20;
+      if (volume > 500000000) bestBuyScore += 15;
+      if (volatility < 8) bestBuyScore += 10;
+      if (score >= 80) bestBuyScore += 30;
+      if (ping >= 5) bestBuyScore += 30;
+      else if (ping >= 3) bestBuyScore += 20;
+      else if (ping >= 1) bestBuyScore += 10;
+      
+      return { 
+        score: Math.round(score), 
+        signal,
+        bestBuy: bestBuyScore >= 70
+      };
+    }
+    
+    function formatTime(ts) {
+      const d = new Date(ts);
+      return d.toLocaleTimeString();
+    }
+
+    // --- Top 10 Coins (WebSocket) ---
+    symbols.forEach(symbol => {
+      history[symbol] = [];
+      lastSignals[symbol] = "Neutral";
+      initCandleData(symbol);
+
+      const ws = new WebSocket(`wss://stream.binance.com:9443/ws/${symbol.toLowerCase()}@trade`);
+      ws.onmessage = async (event) => {
+        const data = JSON.parse(event.data);
+        const price = parseFloat(data.p);
+        const volume = parseFloat(data.p) * parseFloat(data.q); // Calculate quote volume
+        const timestamp = data.T;
+        
+        history[symbol].push({time: timestamp, price, volume});
+        if (history[symbol].length > 5000) history[symbol].shift();
+
+        // Update 5-minute candle with volume and get ping value
+        const ping = updateCandleWithVolume(symbol, price, volume, timestamp);
+
+        const now = Date.now();
+        function getOldPrice(minutes) {
+          const cutoff = now - minutes * 60 * 1000;
+          const older = history[symbol].find(h => h.time >= cutoff);
+          return older ? older.price : price;
+        }
+
+        const ch5m = percentChange(getOldPrice(5), price);
+        const ch15m = percentChange(getOldPrice(15), price);
+        const ch1h = percentChange(getOldPrice(60), price);
+        const ch4h = percentChange(getOldPrice(240), price);
+        const ch24 = percentChange(getOldPrice(1440), price);
+
+        let dailyVolume = 0;
+        try {
+          const res = await fetch(`https://api.binance.com/api/v3/ticker/24hr?symbol=${symbol}`);
+          const ticker = await res.json();
+          dailyVolume = parseFloat(ticker.quoteVolume || 0);
+        } catch(e) {}
+
+        const { score, signal, bestBuy } = aiScore(ch5m, ch15m, ch1h, ch4h, ch24, dailyVolume, price, symbol, ping);
+
+        const row = document.getElementById(symbol) || tableBody.insertRow();
+        row.id = symbol;
+        
+        // Add best buy class for highlighting
+        if (bestBuy) {
+          row.classList.add('best-buy');
+          row.classList.add('pump-signal');
+        } else {
+          row.classList.remove('best-buy');
+          row.classList.remove('pump-signal');
+        }
+        
+        // Add ping class for highlighting
+        row.classList.remove('ping-1', 'ping-2', 'ping-3', 'ping-4', 'ping-5');
+        if (ping >= 5) {
+          row.classList.add('ping-5');
+        } else if (ping >= 4) {
+          row.classList.add('ping-4');
+        } else if (ping >= 3) {
+          row.classList.add('ping-3');
+        } else if (ping >= 2) {
+          row.classList.add('ping-2');
+        } else if (ping >= 1) {
+          row.classList.add('ping-1');
+        }
+        
+        // Add highlight animation for ping changes
+        if (ping > 0) {
+          row.classList.add('highlight');
+          setTimeout(() => row.classList.remove('highlight'), 1500);
+        }
+        
+        const currentVolume = candleData[symbol].currentCandle.volume;
+        
+        row.innerHTML = `
+          <td data-value="${symbol}">${symbol}</td>
+          <td data-value="${price}">$${price.toFixed(2)}</td>
+          <td data-value="${ch5m}">${formatChange(ch5m)}</td>
+          <td data-value="${ch15m}">${formatChange(ch15m)}</td>
+          <td data-value="${ch1h}">${formatChange(ch1h)}</td>
+          <td data-value="${ch4h}">${formatChange(ch4h)}</td>
+          <td data-value="${ch24}">${formatChange(ch24)}</td>
+          <td data-value="${ping}">${formatPing(ping, currentVolume)}</td>
+          <td data-value="${currentVolume}">${createVolumeIndicator(currentVolume, 1000000)}</td>
+          <td data-value="${score}">${score}</td>
+          <td data-value="${signal}">${
+            signal === "Strong Pump 🚀" ? '<span class="green">'+signal+'</span>' :
+            signal === "Potential Pump" ? '<span class="yellow">'+signal+'</span>' :
+            signal === "Slight Bullish" ? '<span class="blue">'+signal+'</span>' :
+            signal === "Bearish 📉" ? '<span class="red">'+signal+'</span>' :
+            signal === "Strong Dump 📉" ? '<span class="red">'+signal+'</span>' :
+            '<span class="neutral">Neutral</span>'
+          }</td>
+          <td data-value="${bestBuy ? 1 : 0}">${bestBuy ? '<span class="green">✅ Best Buy</span>' : '<span class="neutral">-</span>'}</td>
+          <td data-value="${now}">${formatTime(now)}</td>
+        `;
+        
+        // Apply sorting if needed
+        if (sortStates.top10.column !== null) {
+          const sortType = document.querySelectorAll('#coinsTable th')[sortStates.top10.column].getAttribute('data-sort');
+          sortTable(tableBody, sortStates.top10.column, sortType, sortStates.top10.direction, 'top10');
+        }
+      };
+    });
+
+    // --- Market Watch (All USDT Spot coins) ---
+    const marketHistory = {};
+    async function loadMarket() {
+      try {
+        const res = await fetch("https://api.binance.com/api/v3/ticker/24hr");
+        const data = await res.json();
+        const usdtPairs = data.filter(item => item.symbol.endsWith("USDT"));
+
+        marketBody.innerHTML = "";
+        const now = Date.now();
+
+        usdtPairs.forEach(item => {
+          const symbol = item.symbol;
+          const price = parseFloat(item.lastPrice);
+          if (!marketHistory[symbol]) marketHistory[symbol] = [];
+          marketHistory[symbol].push({time: now, price});
+          if (marketHistory[symbol].length > 5000) marketHistory[symbol].shift();
+          
+          // Initialize candle data for market symbols
+          initCandleData(symbol);
+          
+          // For market data, we'll simulate 5m volume using 1/288th of the 24h volume
+          // (since there are 288 5-minute intervals in 24 hours)
+          const simulatedVolume = parseFloat(item.quoteVolume) / 288;
+          const ping = updateCandleWithVolume(symbol, price, simulatedVolume, now);
+
+          function getOldPrice(minutes) {
+            const cutoff = now - minutes * 60 * 1000;
+            const older = marketHistory[symbol].find(h => h.time >= cutoff);
+            return older ? older.price : price;
+          }
+          
+          const ch5m = percentChange(getOldPrice(5), price);
+          const ch15m = percentChange(getOldPrice(15), price);
+          const ch1h = percentChange(getOldPrice(60), price);
+          const ch4h = percentChange(getOldPrice(240), price);
+          const ch24 = parseFloat(item.priceChangePercent).toFixed(2);
+
+          const { score, signal, bestBuy } = aiScore(ch5m, ch15m, ch1h, ch4h, ch24, parseFloat(item.quoteVolume||0), price, symbol, ping);
+
+          const row = document.createElement("tr");
+          
+          // Add best buy class for highlighting
+          if (bestBuy) {
+            row.classList.add('best-buy');
+            row.classList.add('pump-signal');
+          }
+          
+          // Add ping class for highlighting
+          row.classList.remove('ping-1', 'ping-2', 'ping-3', 'ping-4', 'ping-5');
+          if (ping >= 5) {
+            row.classList.add('ping-5');
+          } else if (ping >= 4) {
+            row.classList.add('ping-4');
+          } else if (ping >= 3) {
+            row.classList.add('ping-3');
+          } else if (ping >= 2) {
+            row.classList.add('ping-2');
+          } else if (ping >= 1) {
+            row.classList.add('ping-1');
+          }
+          
+          const currentVolume = candleData[symbol].currentCandle.volume;
+          
+          row.innerHTML = `
+            <td data-value="${symbol}">${symbol}</td>
+            <td data-value="${price}">$${price.toFixed(6)}</td>
+            <td data-value="${ch5m}">${formatChange(ch5m)}</td>
+            <td data-value="${ch15m}">${formatChange(ch15m)}</td>
+            <td data-value="${ch1h}">${formatChange(ch1h)}</td>
+            <td data-value="${ch4h}">${formatChange(ch4h)}</td>
+            <td data-value="${ch24}">${formatChange(ch24)}</td>
+            <td data-value="${ping}">${formatPing(ping, currentVolume)}</td>
+            <td data-value="${currentVolume}">${createVolumeIndicator(currentVolume, 1000000)}</td>
+            <td data-value="${score}">${score}</td>
+            <td data-value="${signal}">${
+              signal === "Strong Pump 🚀" ? '<span class="green">'+signal+'</span>' :
+              signal === "Potential Pump" ? '<span class="yellow">'+signal+'</span>' :
+              signal === "Slight Bullish" ? '<span class="blue">'+signal+'</span>' :
+              signal === "Bearish 📉" ? '<span class="red">'+signal+'</span>' :
+              signal === "Strong Dump 📉" ? '<span class="red">'+signal+'</span>' :
+              '<span class="neutral">Neutral</span>'
+            }</td>
+            <td data-value="${bestBuy ? 1 : 0}">${bestBuy ? '<span class="green">✅ Best Buy</span>' : '<span class="neutral">-</span>'}</td>
+            <td data-value="${now}">${formatTime(now)}</td>
+          `;
+          marketBody.appendChild(row);
+        });
+        
+        // Apply sorting if needed
+        if (sortStates.market.column !== null) {
+          const sortType = document.querySelectorAll('#marketTableInner th')[sortStates.market.column].getAttribute('data-sort');
+          sortTable(marketBody, sortStates.market.column, sortType, sortStates.market.direction, 'market');
+        }
+      } catch(e) {
+        console.error("Error fetching market data", e);
+      }
+    }
+
+    // Initial load
+    loadMarket();
+    
+    // Refresh market data button
+    refreshMarketBtn.addEventListener('click', loadMarket);
+    
+    // Toggle ping details
+    togglePingBtn.addEventListener('click', () => {
+      document.querySelectorAll('.volume-info, .progress-container').forEach(el => {
+        el.style.display = el.style.display === 'none' ? '' : 'none';
+      });
+    });
+    
+    // Auto-refresh every 30 seconds
+    setInterval(loadMarket, 30000);
+
+    // Search filter
+    searchBox.addEventListener("keyup", () => {
+      const filter = searchBox.value.toUpperCase();
+      const rows = marketBody.getElementsByTagName("tr");
+      for (let i = 0; i < rows.length; i++) {
+        const cell = rows[i].getElementsByTagName("td")[0];
+        if (cell) {
+          const txt = cell.textContent || cell.innerText;
+          rows[i].style.display = txt.toUpperCase().indexOf(filter) > -1 ? "" : "none";
+        }
+      }
+    });
+    
+    // Initialize sorting functionality
+    addSortingListeners();
+    
+    // Set initial sort indicators
+    document.querySelectorAll('#coinsTable th')[6].innerHTML = document.querySelectorAll('#coinsTable th')[6].textContent + `<span class="sort-indicator"> ↓</span>`;
+    document.querySelectorAll('#marketTableInner th')[6].innerHTML = document.querySelectorAll('#marketTableInner th')[6].textContent + `<span class="sort-indicator"> ↓</span>`;
+  </script>
+</body>
+</html>
