@@ -1,35 +1,44 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Directory Listing</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 40px; }
-        a { text-decoration: none; color: #0066cc; }
-        a:hover { text-decoration: underline; }
-        .dir { font-weight: bold; color: #d9534f; }
-        .file { color: #333; }
-        ul { list-style-type: none; padding: 0; }
-        li { margin: 5px 0; }
-    </style>
+  <meta charset="UTF-8">
+  <title>Auto Index of HTML Files</title>
+  <style>
+    body { font-family: Arial, sans-serif; background:#111; color:#eee; }
+    h2 { color:#0f0; }
+    ul { list-style-type: none; padding:0; }
+    li { margin: 8px 0; }
+    a { color:#0ff; text-decoration:none; }
+    a:hover { text-decoration:underline; }
+  </style>
 </head>
 <body>
-    <h1>📁 Contents of <?php echo htmlspecialchars(realpath('.')); ?></h1>
-    <ul>
-        <?php
-        $files = array_diff(scandir('.'), array('.', '..'));
-        sort($files); // Optional: sort alphabetically
+  <h2>Available Pages</h2>
+  <ul id="file-list"></ul>
 
-        foreach ($files as $file) {
-            $isDir = is_dir($file);
-            $class = $isDir ? 'dir' : 'file';
-            $icon = $isDir ? '📁 ' : '📄 ';
-            $display = $icon . htmlspecialchars($file);
-            $url = urlencode($file); // Encode for URL safety
+  <script>
+    const username = "YOUR_GITHUB_USERNAME";
+    const repo = "YOUR_REPO_NAME";
+    const branch = "main"; // or "master"
 
-            echo "<li class='$class'><a href='$url'>$display</a></li>\n";
-        }
-        ?>
-    </ul>
+    fetch(`https://api.github.com/repos/${username}/${repo}/contents/`)
+      .then(res => res.json())
+      .then(files => {
+        const list = document.getElementById("file-list");
+        files
+          .filter(file => file.name.endsWith(".html") && file.name !== "index.html")
+          .forEach(file => {
+            const li = document.createElement("li");
+            const a = document.createElement("a");
+            a.href = file.name;
+            a.textContent = file.name;
+            li.appendChild(a);
+            list.appendChild(li);
+          });
+      })
+      .catch(err => {
+        console.error("Error fetching repo files:", err);
+      });
+  </script>
 </body>
 </html>
