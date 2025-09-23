@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Directory Listing</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        a { text-decoration: none; color: #0066cc; }
+        a:hover { text-decoration: underline; }
+        .dir { font-weight: bold; color: #d9534f; }
+        .file { color: #333; }
+        ul { list-style-type: none; padding: 0; }
+        li { margin: 5px 0; }
+    </style>
+</head>
+<body>
+    <h1>📁 Contents of <?php echo htmlspecialchars(realpath('.')); ?></h1>
+    <ul>
+        <?php
+        $files = array_diff(scandir('.'), array('.', '..'));
+        sort($files); // Optional: sort alphabetically
+
+        foreach ($files as $file) {
+            $isDir = is_dir($file);
+            $class = $isDir ? 'dir' : 'file';
+            $icon = $isDir ? '📁 ' : '📄 ';
+            $display = $icon . htmlspecialchars($file);
+            $url = urlencode($file); // Encode for URL safety
+
+            echo "<li class='$class'><a href='$url'>$display</a></li>\n";
+        }
+        ?>
+    </ul>
+</body>
+</html>
