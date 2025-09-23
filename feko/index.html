@@ -17,11 +17,11 @@
   <ul id="file-list"></ul>
 
   <script>
-    const username = "YOUR_GITHUB_USERNAME";
-    const repo = "YOUR_REPO_NAME";
+    const username = "mfekry81";
+    const repo = "fekrypto";
     const branch = "main"; // or "master"
 
-    fetch(`https://api.github.com/repos/${username}/${repo}/contents/`)
+    fetch(`https://api.github.com/repos/mfekry81/fekrypto/contents/`)
       .then(res => res.json())
       .then(files => {
         const list = document.getElementById("file-list");
