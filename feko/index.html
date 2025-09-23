@@ -21,7 +21,7 @@
     const repo = "fekrypto";
     const branch = "main"; // or "master"
 
-    fetch(`https://api.github.com/repos/mfekry81/fekrypto/contents/`)
+    fetch(`https://api.github.com/repos/mfekry81/fekrypto/feko/contents/`)
       .then(res => res.json())
       .then(files => {
         const list = document.getElementById("file-list");
