@@ -166,7 +166,7 @@ async function fetchAllUSDTSymbols() {
             
             try {
                 // Method 2: Try local CORS proxy if available
-                response = await fetch('http://localhost:8080/https://api.binance.com/api/v3/ticker/24hr');
+                response = await fetch('https://api.binance.com/api/v3/ticker/24hr');
                 data = await response.json();
             } catch (proxyError) {
                 console.log('Local proxy not available, using mock data...');
@@ -330,7 +330,7 @@ async function fetch24hrTickerData() {
             tickerData = await response.json();
         } catch (corsError) {
             try {
-                response = await fetch('http://localhost:8080/https://api.binance.com/api/v3/ticker/24hr');
+                response = await fetch('https://api.binance.com/api/v3/ticker/24hr');
                 tickerData = await response.json();
             } catch (proxyError) {
                 console.log('Cannot fetch ticker data, using existing data');
@@ -542,7 +542,7 @@ async function fetchHistoricalData(symbol) {
             data = await response.json();
         } catch (corsError) {
             try {
-                const proxyUrl = `http://localhost:8080/https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${currentTimeframe}&limit=${limit}`;
+                const proxyUrl = `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${currentTimeframe}&limit=${limit}`;
                 response = await fetch(proxyUrl);
                 data = await response.json();
             } catch (proxyError) {
