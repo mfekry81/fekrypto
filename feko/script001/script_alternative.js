@@ -32,7 +32,7 @@ const clearFiltersBtn = document.getElementById('clearFilters');
 // Mock data for demonstration when CORS is blocked
 const mockSymbols = [
     'BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'ADAUSDT', 'XRPUSDT', 'SOLUSDT', 
-    'DOGEUSDT', 'DOTUSDT', 'MATICUSDT', 'LTCUSDT', 'AVAXUSDT', 'LINKUSDT',
+    'DOGEUSDT', 'DOTUSDT', 'KAVAUSDT', 'LTCUSDT', 'AVAXUSDT', 'LINKUSDT',
     'ATOMUSDT', 'UNIUSDT', 'ETCUSDT', 'XLMUSDT', 'BCHUSDT', 'FILUSDT',
     'TRXUSDT', 'FTMUSDT', 'MANAUSDT', 'SANDUSDT', 'AXSUSDT', 'CHZUSDT',
     'ALGOUSDT', 'VETUSDT', 'EOSUSDT', 'XTZUSDT', 'NEOUSDT', 'QTUMUSDT',
@@ -159,14 +159,14 @@ async function fetchAllUSDTSymbols() {
         
         try {
             // Method 1: Direct API call
-            response = await fetch('https://api.binance.com/api/v3/exchangeInfo');
+            response = await fetch('https://api.binance.com/api/v3/ticker/24hr');
             data = await response.json();
         } catch (corsError) {
             console.log('Direct API call failed, trying alternative methods...');
             
             try {
                 // Method 2: Try local CORS proxy if available
-                response = await fetch('http://localhost:8080/https://api.binance.com/api/v3/exchangeInfo');
+                response = await fetch('http://localhost:8080/https://api.binance.com/api/v3/ticker/24hr');
                 data = await response.json();
             } catch (proxyError) {
                 console.log('Local proxy not available, using mock data...');
