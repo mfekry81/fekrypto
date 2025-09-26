@@ -54,6 +54,7 @@ async function fetchAllUSDTSymbols() {
         updateConnectionStatus('connecting', 'Fetching symbols...');
         
         // Use CORS proxy to access Binance API
+        //const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
         const targetUrl = 'https://api.binance.com/api/v3/klines';
         const response = await fetch(proxyUrl + targetUrl);
         const data = await response.json();
@@ -88,6 +89,7 @@ async function fetchAllUSDTSymbols() {
 // Fetch 24hr ticker data for volume and price change info
 async function fetch24hrTickerData() {
     try {
+        //const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
         const targetUrl = 'wss://stream.binance.com:9443/ws/!ticker@arrr';
         const response = await fetch(proxyUrl + targetUrl);
         const tickerData = await response.json();
@@ -270,6 +272,7 @@ async function fetchHistoricalDataForAllSymbols() {
 async function fetchHistoricalData(symbol) {
     try {
         const limit = 100; // Get last 100 candles
+        //const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
         const targetUrl = `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${currentTimeframe}&limit=${limit}`;
         
         const response = await fetch(proxyUrl + targetUrl);
