@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Volume Monitor v4</title>
+
+  <!-- Bulma CSS -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.6.2/css/bulma.min.css">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+
+  <style>
+    body { background: #f9f9f9; }
+    .navbar { margin-bottom: 2rem; }
+    .title { font-size: 2rem; }
+    .box { margin-bottom: 1rem; }
+    table th, table td { text-align: center; vertical-align: middle; }
+    .is-buy { background-color: #d4f8d4; }
+    .is-sell { background-color: #ffd4d4; }
+    .is-up { color: #23d160; }
+    .is-down { color: #ff3860; }
+  </style>
+</head>
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar has-shadow is-dark">
+    <div class="navbar-brand">
+      <a class="navbar-item">
+        <span class="icon"><i class="fa fa-line-chart"></i></span>
+        <span> AI Volume Monitor v4</span>
+      </a>
+    </div>
+  </nav>
+
+  <section class="section">
+    <div class="container">
+
+      <!-- Market Watch (Previously Ping Coins Monitor ) -->
+      <div class="card">
+        <div class="card-content">
+          <h3 class="title is-4">Binance Market Watch (USDT Pairs)</h3>
+          <table class="table is-bordered is-fullwidth" id="marketWatch">
+            <thead>
+              <tr>
+                <th>Coin</th>
+                <th>Real-Time Price</th>
+                <th>Net Vol % (24h)</th>
+                <th>Direction</th>
+              </tr>
+            </thead>
+            <tbody>
+                <tr><td colspan="4">Loading all USDT market data...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Selected Coin Data Section -->
+      <div class="box">
+        <label class="label">Select Coin</label>
+        <div class="select">
+          <select id="coinSelector">
+            <option value="BTCUSDT">BTC/USDT</option>
+            <option value="ETHUSDT">ETH/USDT</option>
+            <option value="BNBUSDT">BNB/USDT</option>
+            <option value="XRPUSDT">XRP/USDT</option>
+            <option value="AVAXUSDT">AVAX/USDT</option>
+            <option value="SOLUSDT">SOL/USDT</option>
+            <option value="LINKUSDT">LINK/USDT</option>
+            <option value="SUIUSDT">SUI/USDT</option>
+            <option value="SEIUSDT">SEI/USDT</option>
+            <option value="YGGUSDT">YGG/USDT</option>
+            <option value="GALAUSDT">GALA/USDT</option>
+            <option value="SKLUSDT">SKL/USDT</option>
+            <option value="KAVAUSDT">KAVA/USDT</option>
+            <option value="HBARUSDT">HBAR/USDT</option>
+            <option value="APTUSDT">APT/USDT</option>
+            <option value="INJUSDT">INJ/USDT</option>
+            <option value="WLDUSDT">WLD/USDT</option>
+            <option value="ARBUSDT">ARB/USDT</option>
+            <option value="ONDOUSDT">ONDO/USDT</option>
+            <option value="TIAUSDT">TIA/USDT</option>
+            <option value="ORDIUSDT">ORDI/USDT</option>
+          </select>
+        </div>
+        <button class="button is-info" id="loadData">Load Data</button>
+      </div>
+
+      <div class="card">
+        <div class="card-content">
+          <h3 class="title is-4">Selected Coin Data</h3>
+          <table class="table is-bordered is-fullwidth" id="coinTable">
+            <thead>
+              <tr>
+                <th>Coin</th>
+                <th>Real-Time Price</th>
+                <th>Pings</th>
+                <th>Net Vol BTC</th>
+                <th>Net Vol %</th>
+                <th>Recent Total Vol BTC</th>
+                <th>Recent Vol %</th>
+                <th>Recent Net Vol</th>
+                <th>Direction</th>
+                <th>Datetime (UTC)</th>
+                <th>AI Signal</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- jQuery -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+
+  <script>
+    // Mock ChatGPT-F Enhancer Logic
+    function aiSignalEnhancer(netVolBTC, netVolPercent ) {
+      if (netVolBTC > 0 && netVolPercent > 2) {
+        return { signal: "BUY", css: "is-buy" };
+      } else if (netVolBTC < 0 && netVolPercent < -2) {
+        return { signal: "SELL", css: "is-sell" };
+      } else {
+        return { signal: "HOLD", css: "" };
+      }
+    }
+
+    // Fetch data for the "Selected Coin Data" table
+    function fetchSelectedCoinData(coin) {
+      const url = `https://api.binance.com/api/v3/ticker/24hr?symbol=${coin}`;
+      
+      $.getJSON(url, function(data ) {
+        const realTimePrice = parseFloat(data.lastPrice).toFixed(2);
+        const netVolBTC = (parseFloat(data.volume) - parseFloat(data.quoteVolume)) / 1000; // Mock calc
+        const recentNetVol = netVolBTC / 2;
+        const direction = recentNetVol >= 0 ? 'UP' : 'DOWN';
+        const directionClass = recentNetVol >= 0 ? 'is-up' : 'is-down';
+        const netVolPercent = parseFloat(data.priceChangePercent);
+        const pings = Math.floor(Math.random() * 10);
+        const recentVol = parseFloat(data.volume).toFixed(2);
+        const datetime = new Date().toISOString();
+        const ai = aiSignalEnhancer(netVolBTC, netVolPercent);
+
+        const row = `
+          <tr class="${ai.css}">
+            <td>${coin}</td>
+            <td>$${realTimePrice}</td>
+            <td>${pings}</td>
+            <td>${netVolBTC.toFixed(2)}</td>
+            <td>${netVolPercent.toFixed(2)}%</td>
+            <td>${recentVol}</td>
+            <td>${(Math.random() * 5).toFixed(2)}%</td>
+            <td>${recentNetVol.toFixed(2)}</td>
+            <td class="${directionClass}"><b>${direction} <i class="fa fa-arrow-${direction.toLowerCase()}"></i></b></td>
+            <td>${datetime}</td>
+            <td><b>${ai.signal}</b></td>
+          </tr>
+        `;
+
+        $("#coinTable tbody").prepend(row);
+        if ($("#coinTable tbody tr").length > 20) {
+          $("#coinTable tbody tr:last").remove();
+        }
+      });
+    }
+
+    // Fetch all USDT pairs for the Market Watch
+    function fetchMarketWatchData() {
+        const url = "https://api.binance.com/api/v3/ticker/24hr";
+
+        $.getJSON(url, function(data ) {
+            $("#marketWatch tbody").empty(); // Clear the table before populating
+            data.forEach(ticker => {
+                if (ticker.symbol.endsWith('USDT')) {
+                    const priceChangePercent = parseFloat(ticker.priceChangePercent);
+                    const direction = priceChangePercent >= 0 ? 'UP' : 'DOWN';
+                    const directionClass = priceChangePercent >= 0 ? 'is-up' : 'is-down';
+                    const realTimePrice = parseFloat(ticker.lastPrice).toFixed(2);
+
+                    const row = `
+                        <tr>
+                            <td>${ticker.symbol}</td>
+                            <td>$${realTimePrice}</td>
+                            <td>${priceChangePercent.toFixed(2)}%</td>
+                            <td class="${directionClass}"><b>${direction} <i class="fa fa-arrow-${direction.toLowerCase()}"></i></b></td>
+                        </tr>
+                    `;
+                    $("#marketWatch tbody").append(row);
+                }
+            });
+        });
+    }
+
+    $(document).ready(function() {
+      // Load and refresh the market watch
+      fetchMarketWatchData();
+      setInterval(fetchMarketWatchData, 60000); // Refresh every 60 seconds
+
+      // Handle the "Selected Coin Data" section
+      $('#loadData').click(function(){
+        const coin = $('#coinSelector').val();
+        fetchSelectedCoinData(coin);
+      });
+
+      // Auto-refresh for the selected coin
+      setInterval(function(){
+        const coin = $('#coinSelector').val();
+        if ($("#coinTable tbody tr").length > 0) {
+            fetchSelectedCoinData(coin);
+        }
+      }, 60000);
+    });
+  </script>
+</body>
+</html>
