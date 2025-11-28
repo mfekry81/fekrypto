@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Volume Monitor v5 - Enhanced</title>
+
+  <!-- Bulma CSS -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.6.2/css/bulma.min.css">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+
+  <style>
+    body { background: #f9f9f9; }
+    .navbar { margin-bottom: 2rem; }
+    .title { font-size: 2rem; }
+    .box { margin-bottom: 1rem; }
+    table th, table td { text-align: center; vertical-align: middle; }
+    .is-strong-buy { background-color: #a8e6a8; font-weight: bold; }
+    .is-buy { background-color: #d4f8d4; }
+    .is-sell { background-color: #ffd4d4; }
+    .is-strong-sell { background-color: #ffb3b3; font-weight: bold; }
+    .is-up { color: #23d160; }
+    .is-down { color: #ff3860; }
+    .pressure-indicator {
+      padding: 5px 10px;
+      border-radius: 4px;
+      font-weight: bold;
+      display: inline-block;
+    }
+    .pressure-buying { background-color: #48c774; color: white; }
+    .pressure-selling { background-color: #f14668; color: white; }
+    .pressure-neutral { background-color: #ffdd57; color: #333; }
+    .volume-bar {
+      height: 20px;
+      background: linear-gradient(to right, #f14668 0%, #ffdd57 50%, #48c774 100%);
+      border-radius: 4px;
+      position: relative;
+      margin: 5px 0;
+    }
+    .volume-indicator {
+      position: absolute;
+      width: 4px;
+      height: 100%;
+      background: #000;
+      top: 0;
+    }
+  </style>
+</head>
+<body>
+  <section class="section">
+    <div class="container">
+      <p>
+        <span style="font-size:30px;"><strong>Binance Market Watch v5</strong></span><br>
+      </p>
+
+      <!-- Selected Coin Data Section -->
+      <div class="box">
+        <label class="label">Select Coin</label>
+        <div class="select">
+          <select id="coinSelector">
+            <option value="BTCUSDT">BTC/USDT</option>
+            <option value="ETHUSDT">ETH/USDT</option>
+            <option value="BNBUSDT">BNB/USDT</option>
+            <option value="XRPUSDT">XRP/USDT</option>
+            <option value="AVAXUSDT">AVAX/USDT</option>
+            <option value="SOLUSDT">SOL/USDT</option>
+            <option value="LINKUSDT">LINK/USDT</option>
+            <option value="SUIUSDT">SUI/USDT</option>
+            <option value="SEIUSDT">SEI/USDT</option>
+            <option value="YGGUSDT">YGG/USDT</option>
+            <option value="GALAUSDT">GALA/USDT</option>
+            <option value="SKLUSDT">SKL/USDT</option>
+            <option value="KAVAUSDT">KAVA/USDT</option>
+            <option value="HBARUSDT">HBAR/USDT</option>
+            <option value="APTUSDT">APT/USDT</option>
+            <option value="INJUSDT">INJ/USDT</option>
+            <option value="WLDUSDT">WLD/USDT</option>
+            <option value="ARBUSDT">ARB/USDT</option>
+            <option value="ONDOUSDT">ONDO/USDT</option>
+            <option value="TIAUSDT">TIA/USDT</option>
+            <option value="ORDIUSDT">ORDI/USDT</option>
+          </select>
+        </div>
+        <button class="button is-info" id="loadData">Load Data</button>
+      </div>
+
+      <div class="card">
+        <div class="card-content">
+          <h3 class="title is-4">Selected Coin Data - Real-Time Analysis</h3>
+          <table class="table is-bordered is-fullwidth" id="coinTable">
+            <thead>
+              <tr>
+                <th>Coin</th>
+                <th>Real-Time Price</th>
+                <th>24h Change</th>
+                <th>Market Pressure</th>
+                <th>Pressure Score</th>
+                <th>Net Vol BTC</th>
+                <th>Volume Trend</th>
+                <th>Direction</th>
+                <th>AI Signal</th>
+                <th>Datetime (UTC)</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- jQuery -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+
+  <script>
+    // Format number as currency with commas and 2 decimals
+    function formatCurrency(num) {
+      return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    // Calculate market pressure based on price change and volume
+    function calculateMarketPressure(priceChange, volume, quoteVolume) {
+      // Normalize volume impact
+      const volumeRatio = volume / quoteVolume;
+      
+      // Calculate pressure score (-100 to +100)
+      let pressureScore = priceChange * 10;
+      
+      // Adjust based on volume
+      if (volumeRatio > 1.2) {
+        pressureScore *= 1.3; // High volume amplifies pressure
+      } else if (volumeRatio < 0.8) {
+        pressureScore *= 0.7; // Low volume dampens pressure
+      }
+      
+      // Determine pressure type
+      let pressureType, pressureClass;
+      if (pressureScore > 15) {
+        pressureType = "STRONG BUYING";
+        pressureClass = "pressure-buying";
+      } else if (pressureScore > 5) {
+        pressureType = "BUYING";
+        pressureClass = "pressure-buying";
+      } else if (pressureScore < -15) {
+        pressureType = "STRONG SELLING";
+        pressureClass = "pressure-selling";
+      } else if (pressureScore < -5) {
+        pressureType = "SELLING";
+        pressureClass = "pressure-selling";
+      } else {
+        pressureType = "NEUTRAL";
+        pressureClass = "pressure-neutral";
+      }
+      
+      return { pressureScore, pressureType, pressureClass };
+    }
+
+    // Enhanced AI Signal Logic
+    function aiSignalEnhancer(priceChange, pressureScore, volumeTrend) {
+      let signal, css;
+      
+      // Strong buy conditions
+      if (priceChange > 3 && pressureScore > 20 && volumeTrend > 0) {
+        signal = "STRONG BUY 🚀";
+        css = "is-strong-buy";
+      }
+      // Regular buy conditions
+      else if (priceChange > 1.5 && pressureScore > 8) {
+        signal = "BUY ⬆";
+        css = "is-buy";
+      }
+      // Strong sell conditions
+      else if (priceChange < -3 && pressureScore < -20 && volumeTrend < 0) {
+        signal = "STRONG SELL ⚠";
+        css = "is-strong-sell";
+      }
+      // Regular sell conditions
+      else if (priceChange < -1.5 && pressureScore < -8) {
+        signal = "SELL ⬇";
+        css = "is-sell";
+      }
+      // Hold
+      else {
+        signal = "HOLD ⏸";
+        css = "";
+      }
+      
+      return { signal, css };
+    }
+
+    // Create volume trend bar
+    function createVolumeTrendBar(volumeTrend) {
+      // Normalize to 0-100 scale (50 is neutral)
+      const position = 50 + (volumeTrend * 2);
+      const clampedPosition = Math.max(0, Math.min(100, position));
+      
+      return `<div class="volume-bar"><div class="volume-indicator" style="left: ${clampedPosition}%"></div></div>`;
+    }
+
+    // Fetch data for the "Selected Coin Data" table
+    function fetchSelectedCoinData(coin) {
+      const url = `https://api.binance.com/api/v3/ticker/24hr?symbol=${coin}`;
+      
+      $.getJSON(url, function(data) {
+        const realTimePrice = parseFloat(data.lastPrice).toFixed(2);
+        const priceChange = parseFloat(data.priceChangePercent);
+        const volume = parseFloat(data.volume);
+        const quoteVolume = parseFloat(data.quoteVolume);
+        
+        // Calculate market pressure
+        const pressure = calculateMarketPressure(priceChange, volume, quoteVolume);
+        
+        // Calculate net volume in BTC (simplified)
+        const netVolBTC = (volume - quoteVolume) / 1000;
+        
+        // Calculate volume trend (-20 to +20 range for visualization)
+        const volumeTrend = (priceChange > 0 ? 1 : -1) * Math.min(20, Math.abs(priceChange * 2));
+        
+        // Direction indicators
+        const direction = priceChange >= 0 ? 'UP' : 'DOWN';
+        const directionClass = priceChange >= 0 ? 'is-up' : 'is-down';
+        
+        // Get AI signal
+        const ai = aiSignalEnhancer(priceChange, pressure.pressureScore, volumeTrend);
+        
+        const datetime = new Date().toISOString().replace('T', ' ').substring(0, 19);
+        
+        const row = `
+          <tr class="${ai.css}">
+            <td><strong>${coin}</strong></td>
+            <td>$${realTimePrice}</td>
+            <td class="${directionClass}"><strong>${priceChange.toFixed(2)}%</strong></td>
+            <td>
+              <span class="pressure-indicator ${pressure.pressureClass}">
+                ${pressure.pressureType}
+              </span>
+            </td>
+            <td><strong>${pressure.pressureScore.toFixed(1)}</strong></td>
+            <td>${formatCurrency(netVolBTC)}</td>
+            <td>${createVolumeTrendBar(volumeTrend)}</td>
+            <td class="${directionClass}">
+              <b>${direction} <i class="fa fa-arrow-${direction.toLowerCase()}"></i></b>
+            </td>
+            <td><strong>${ai.signal}</strong></td>
+            <td>${datetime}</td>
+          </tr>
+        `;
+
+        $("#coinTable tbody").prepend(row);
+        if ($("#coinTable tbody tr").length > 20) {
+          $("#coinTable tbody tr:last").remove();
+        }
+      }).fail(function() {
+        console.error("Failed to fetch data for " + coin);
+      });
+    }
+
+    $(document).ready(function() {
+      // Handle the "Selected Coin Data" section
+      $('#loadData').click(function(){
+        const coin = $('#coinSelector').val();
+        fetchSelectedCoinData(coin);
+      });
+
+      // Auto-refresh for the selected coin every 30 seconds
+      setInterval(function(){
+        const coin = $('#coinSelector').val();
+        if ($("#coinTable tbody tr").length > 0) {
+            fetchSelectedCoinData(coin);
+        }
+      }, 30000);
+    });
+  </script>
+</body>
+</html>
