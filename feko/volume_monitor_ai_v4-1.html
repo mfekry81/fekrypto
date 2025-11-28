@@ -75,7 +75,7 @@
                 <th>Recent Vol %</th>
                 <th>Recent Net Vol</th>
                 <th>Direction</th>
-                <th>Datetime (UTC)</th>
+                <th>Local Time</th>
                 <th>AI Signal</th>
               </tr>
             </thead>
@@ -94,6 +94,19 @@
     // Format number as currency with commas and 2 decimals
     function formatCurrency(num) {
       return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    // Get local time formatted
+    function getLocalTime() {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const seconds = String(now.getSeconds()).padStart(2, '0');
+      
+      return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
     }
 
     // Mock ChatGPT-F Enhancer Logic
@@ -120,7 +133,7 @@
         const netVolPercent = parseFloat(data.priceChangePercent);
         const pings = Math.floor(Math.random() * 10);
         const recentVol = parseFloat(data.volume) / 1000;
-        const datetime = new Date().toISOString();
+        const datetime = getLocalTime();
         const ai = aiSignalEnhancer(netVolBTC, netVolPercent);
 
         const row = `
