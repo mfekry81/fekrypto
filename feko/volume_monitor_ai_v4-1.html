@@ -69,6 +69,7 @@
                 <th>Coin</th>
                 <th>Real-Time Price</th>
                 <th>Pings</th>
+                <th>1min Vol USDT</th>
                 <th>Net Vol BTC</th>
                 <th>Net Vol %</th>
                 <th>Recent Total Vol BTC</th>
@@ -120,9 +121,35 @@
       }
     }
 
+    // Fetch 1-minute candle data
+    function fetch1MinVolume(coin) {
+      return new Promise((resolve, reject) => {
+        const url = `https://api.binance.com/api/v3/klines?symbol=${coin}&interval=1m&limit=1`;
+        
+        $.getJSON(url, function(data) {
+          if (data && data.length > 0) {
+            const candle = data[0];
+            const openPrice = parseFloat(candle[1]);
+            const closePrice = parseFloat(candle[4]);
+            const quoteVolume = parseFloat(candle[7]); // Quote asset volume (USDT)
+            const priceChange = closePrice - openPrice;
+            
+            resolve({ quoteVolume, priceChange });
+          } else {
+            resolve({ quoteVolume: 0, priceChange: 0 });
+          }
+        }).fail(function() {
+          resolve({ quoteVolume: 0, priceChange: 0 });
+        });
+      });
+    }
+
     // Fetch data for the "Selected Coin Data" table
-    function fetchSelectedCoinData(coin) {
+    async function fetchSelectedCoinData(coin) {
       const url = `https://api.binance.com/api/v3/ticker/24hr?symbol=${coin}`;
+      
+      // Fetch 1-minute volume data
+      const oneMinData = await fetch1MinVolume(coin);
       
       $.getJSON(url, function(data) {
         const realTimePrice = parseFloat(data.lastPrice).toFixed(2);
@@ -136,11 +163,20 @@
         const datetime = getLocalTime();
         const ai = aiSignalEnhancer(netVolBTC, netVolPercent);
 
+        // Format 1-minute volume in USDT
+        const oneMinChange = oneMinData.priceChange;
+        const oneMinVolUSDT = oneMinData.quoteVolume;
+        const oneMinClass = oneMinChange >= 0 ? 'is-up' : 'is-down';
+        const oneMinSign = oneMinChange >= 0 ? '+' : '-';
+        const oneMinAbsChange = Math.abs(oneMinChange).toFixed(4);
+        const oneMinDisplay = `${formatCurrency(oneMinVolUSDT)} (${oneMinSign}$${oneMinAbsChange})`;
+
         const row = `
           <tr class="${ai.css}">
             <td>${coin}</td>
             <td>$${realTimePrice}</td>
             <td>${pings}</td>
+            <td class="${oneMinClass}"><strong>${oneMinDisplay}</strong></td>
             <td>${formatCurrency(netVolBTC)}</td>
             <td>${netVolPercent.toFixed(2)}%</td>
             <td>${formatCurrency(recentVol)}</td>
