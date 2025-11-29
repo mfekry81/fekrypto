@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Volume Monitor v5.2 - Scalping Edition</title>
+
+  <!-- Bulma CSS -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.6.2/css/bulma.min.css">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+
+  <style>
+    body { background: #f9f9f9; }
+    .navbar { margin-bottom: 2rem; }
+    .title { font-size: 2rem; }
+    .box { margin-bottom: 1rem; }
+    table th, table td { text-align: center; vertical-align: middle; }
+    .is-buy { background-color: #d4f8d4; }
+    .is-sell { background-color: #ffd4d4; }
+    .is-up { color: #23d160; }
+    .is-down { color: #ff3860; }
+    .scalp-strong-buy { 
+      background-color: #00d1b2; 
+      color: white; 
+      padding: 8px 12px; 
+      border-radius: 4px; 
+      font-weight: bold;
+      font-size: 14px;
+    }
+    .scalp-buy { 
+      background-color: #48c774; 
+      color: white; 
+      padding: 8px 12px; 
+      border-radius: 4px; 
+      font-weight: bold;
+      font-size: 14px;
+    }
+    .scalp-sell { 
+      background-color: #f14668; 
+      color: white; 
+      padding: 8px 12px; 
+      border-radius: 4px; 
+      font-weight: bold;
+      font-size: 14px;
+    }
+    .scalp-strong-sell { 
+      background-color: #d62828; 
+      color: white; 
+      padding: 8px 12px; 
+      border-radius: 4px; 
+      font-weight: bold;
+      font-size: 14px;
+    }
+    .scalp-neutral { 
+      background-color: #ffdd57; 
+      color: #333; 
+      padding: 8px 12px; 
+      border-radius: 4px; 
+      font-weight: bold;
+      font-size: 14px;
+    }
+    .momentum-bar {
+      height: 25px;
+      background: linear-gradient(to right, #d62828 0%, #f14668 25%, #ffdd57 50%, #48c774 75%, #00d1b2 100%);
+      border-radius: 4px;
+      position: relative;
+      margin: 5px 0;
+      border: 2px solid #333;
+    }
+    .momentum-indicator {
+      position: absolute;
+      width: 6px;
+      height: 100%;
+      background: #000;
+      top: 0;
+      box-shadow: 0 0 5px rgba(0,0,0,0.5);
+    }
+  </style>
+</head>
+<body>
+  <section class="section">
+    <div class="container">
+      <p>
+        <span style="font-size:30px;"><strong>Binance Scalping Monitor v5.2</strong></span><br>
+        <span style="font-size:14px; color: #888;">Real-Time Scalping Signals for 5-15min Timeframes</span>
+      </p>
+
+      <!-- Selected Coin Data Section -->
+      <div class="box">
+        <label class="label">Select Coin</label>
+        <div class="select">
+          <select id="coinSelector">
+            <option value="BTCUSDT">BTC/USDT</option>
+            <option value="ETHUSDT">ETH/USDT</option>
+            <option value="BNBUSDT">BNB/USDT</option>
+            <option value="XRPUSDT">XRP/USDT</option>
+            <option value="AVAXUSDT">AVAX/USDT</option>
+            <option value="SOLUSDT">SOL/USDT</option>
+            <option value="LINKUSDT">LINK/USDT</option>
+            <option value="SUIUSDT">SUI/USDT</option>
+            <option value="SEIUSDT">SEI/USDT</option>
+            <option value="YGGUSDT">YGG/USDT</option>
+            <option value="GALAUSDT">GALA/USDT</option>
+            <option value="SKLUSDT">SKL/USDT</option>
+            <option value="KAVAUSDT">KAVA/USDT</option>
+            <option value="HBARUSDT">HBAR/USDT</option>
+            <option value="APTUSDT">APT/USDT</option>
+            <option value="INJUSDT">INJ/USDT</option>
+            <option value="WLDUSDT">WLD/USDT</option>
+            <option value="ARBUSDT">ARB/USDT</option>
+            <option value="ONDOUSDT">ONDO/USDT</option>
+            <option value="TIAUSDT">TIA/USDT</option>
+            <option value="ORDIUSDT">ORDI/USDT</option>
+          </select>
+        </div>
+        <button class="button is-info" id="loadData">Load Data</button>
+      </div>
+
+      <div class="card">
+        <div class="card-content">
+          <h3 class="title is-4">Real-Time Scalping Analysis</h3>
+          <table class="table is-bordered is-fullwidth" id="coinTable">
+            <thead>
+              <tr>
+                <th>Coin</th>
+                <th>Price</th>
+                <th>1min Vol USDT</th>
+                <th>5min Momentum</th>
+                <th>Scalp Signal</th>
+                <th>Momentum Bar</th>
+                <th>Net Vol %</th>
+                <th>Direction</th>
+                <th>Local Time</th>
+                <th>AI Signal</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- jQuery -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+
+  <script>
+    // Format number as currency with commas and 2 decimals
+    function formatCurrency(num) {
+      return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    // Get local time formatted
+    function getLocalTime() {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const seconds = String(now.getSeconds()).padStart(2, '0');
+      
+      return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+    }
+
+    // Mock ChatGPT-F Enhancer Logic
+    function aiSignalEnhancer(netVolBTC, netVolPercent) {
+      if (netVolBTC > 0 && netVolPercent > 2) {
+        return { signal: "BUY", css: "is-buy" };
+      } else if (netVolBTC < 0 && netVolPercent < -2) {
+        return { signal: "SELL", css: "is-sell" };
+      } else {
+        return { signal: "HOLD", css: "" };
+      }
+    }
+
+    // Fetch 1-minute candle data
+    function fetch1MinVolume(coin) {
+      return new Promise((resolve, reject) => {
+        const url = `https://api.binance.com/api/v3/klines?symbol=${coin}&interval=1m&limit=1`;
+        
+        $.getJSON(url, function(data) {
+          if (data && data.length > 0) {
+            const candle = data[0];
+            const openPrice = parseFloat(candle[1]);
+            const closePrice = parseFloat(candle[4]);
+            const quoteVolume = parseFloat(candle[7]);
+            const priceChange = closePrice - openPrice;
+            
+            resolve({ quoteVolume, priceChange, open: openPrice, close: closePrice });
+          } else {
+            resolve({ quoteVolume: 0, priceChange: 0, open: 0, close: 0 });
+          }
+        }).fail(function() {
+          resolve({ quoteVolume: 0, priceChange: 0, open: 0, close: 0 });
+        });
+      });
+    }
+
+    // Fetch 5-minute candle data for momentum
+    function fetch5MinMomentum(coin) {
+      return new Promise((resolve, reject) => {
+        const url = `https://api.binance.com/api/v3/klines?symbol=${coin}&interval=5m&limit=3`;
+        
+        $.getJSON(url, function(data) {
+          if (data && data.length >= 3) {
+            // Calculate momentum based on last 3 candles
+            let momentum = 0;
+            for (let i = 0; i < 3; i++) {
+              const openPrice = parseFloat(data[i][1]);
+              const closePrice = parseFloat(data[i][4]);
+              const candleChange = ((closePrice - openPrice) / openPrice) * 100;
+              momentum += candleChange * (i + 1); // Weight recent candles more
+            }
+            resolve(momentum);
+          } else {
+            resolve(0);
+          }
+        }).fail(function() {
+          resolve(0);
+        });
+      });
+    }
+
+    // Calculate scalping signal
+    function calculateScalpSignal(oneMinChange, fiveMinMomentum, volume, priceChangePercent) {
+      let score = 0;
+      
+      // 1min price action (40% weight)
+      if (oneMinChange > 0) {
+        score += 40;
+      } else if (oneMinChange < 0) {
+        score -= 40;
+      }
+      
+      // 5min momentum (35% weight)
+      if (fiveMinMomentum > 0.5) {
+        score += 35;
+      } else if (fiveMinMomentum > 0.1) {
+        score += 15;
+      } else if (fiveMinMomentum < -0.5) {
+        score -= 35;
+      } else if (fiveMinMomentum < -0.1) {
+        score -= 15;
+      }
+      
+      // Volume confirmation (25% weight)
+      if (volume > 10000 && oneMinChange > 0) {
+        score += 25;
+      } else if (volume > 10000 && oneMinChange < 0) {
+        score -= 25;
+      }
+      
+      // Determine signal
+      let signal, css;
+      if (score >= 70) {
+        signal = "🚀 STRONG BUY";
+        css = "scalp-strong-buy";
+      } else if (score >= 35) {
+        signal = "✅ BUY NOW";
+        css = "scalp-buy";
+      } else if (score <= -70) {
+        signal = "⚠️ STRONG SELL";
+        css = "scalp-strong-sell";
+      } else if (score <= -35) {
+        signal = "❌ SELL NOW";
+        css = "scalp-sell";
+      } else {
+        signal = "⏸️ WAIT";
+        css = "scalp-neutral";
+      }
+      
+      return { signal, css, score };
+    }
+
+    // Create momentum bar
+    function createMomentumBar(score) {
+      // Normalize score to 0-100 scale (score ranges from -100 to +100)
+      const position = ((score + 100) / 200) * 100;
+      const clampedPosition = Math.max(0, Math.min(100, position));
+      
+      return `<div class="momentum-bar"><div class="momentum-indicator" style="left: ${clampedPosition}%"></div></div>`;
+    }
+
+    // Fetch data for the "Selected Coin Data" table
+    async function fetchSelectedCoinData(coin) {
+      const url = `https://api.binance.com/api/v3/ticker/24hr?symbol=${coin}`;
+      
+      // Fetch 1-minute and 5-minute data
+      const oneMinData = await fetch1MinVolume(coin);
+      const fiveMinMomentum = await fetch5MinMomentum(coin);
+      
+      $.getJSON(url, function(data) {
+        const realTimePrice = parseFloat(data.lastPrice).toFixed(2);
+        const netVolBTC = (parseFloat(data.volume) - parseFloat(data.quoteVolume)) / 1000;
+        const recentNetVol = netVolBTC / 2;
+        const direction = recentNetVol >= 0 ? 'UP' : 'DOWN';
+        const directionClass = recentNetVol >= 0 ? 'is-up' : 'is-down';
+        const netVolPercent = parseFloat(data.priceChangePercent);
+        const datetime = getLocalTime();
+        const ai = aiSignalEnhancer(netVolBTC, netVolPercent);
+
+        // Format 1-minute volume
+        const oneMinChange = oneMinData.priceChange;
+        const oneMinVolUSDT = oneMinData.quoteVolume;
+        const oneMinClass = oneMinChange >= 0 ? 'is-up' : 'is-down';
+        const oneMinSign = oneMinChange >= 0 ? '+' : '-';
+        const oneMinAbsChange = Math.abs(oneMinChange).toFixed(4);
+        const oneMinDisplay = `${formatCurrency(oneMinVolUSDT)} (${oneMinSign}$${oneMinAbsChange})`;
+
+        // Calculate scalping signal
+        const scalpSignal = calculateScalpSignal(oneMinChange, fiveMinMomentum, oneMinVolUSDT, netVolPercent);
+        
+        // Format 5min momentum
+        const momentumClass = fiveMinMomentum >= 0 ? 'is-up' : 'is-down';
+        const momentumDisplay = `${fiveMinMomentum >= 0 ? '+' : ''}${fiveMinMomentum.toFixed(2)}%`;
+
+        const row = `
+          <tr class="${ai.css}">
+            <td><strong>${coin}</strong></td>
+            <td>$${realTimePrice}</td>
+            <td class="${oneMinClass}"><strong>${oneMinDisplay}</strong></td>
+            <td class="${momentumClass}"><strong>${momentumDisplay}</strong></td>
+            <td><span class="${scalpSignal.css}">${scalpSignal.signal}</span></td>
+            <td>${createMomentumBar(scalpSignal.score)}</td>
+            <td>${netVolPercent.toFixed(2)}%</td>
+            <td class="${directionClass}"><b>${direction} <i class="fa fa-arrow-${direction.toLowerCase()}"></i></b></td>
+            <td>${datetime}</td>
+            <td><b>${ai.signal}</b></td>
+          </tr>
+        `;
+
+        $("#coinTable tbody").prepend(row);
+        if ($("#coinTable tbody tr").length > 20) {
+          $("#coinTable tbody tr:last").remove();
+        }
+      });
+    }
+
+    $(document).ready(function() {
+      // Handle the "Selected Coin Data" section
+      $('#loadData').click(function(){
+        const coin = $('#coinSelector').val();
+        fetchSelectedCoinData(coin);
+      });
+
+      // Auto-refresh for the selected coin every 30 seconds
+      setInterval(function(){
+        const coin = $('#coinSelector').val();
+        if ($("#coinTable tbody tr").length > 0) {
+            fetchSelectedCoinData(coin);
+        }
+      }, 30000);
+    });
+  </script>
+</body>
+</html>

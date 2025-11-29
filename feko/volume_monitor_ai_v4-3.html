@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AI Volume Monitor v4.3 - TF Colors + 1m Vol</title>
+
+  <!-- Bulma CSS -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.6.2/css/bulma.min.css">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+
+  <style>
+    body { background: #f9f9f9; }
+    .navbar { margin-bottom: 2rem; }
+    .title { font-size: 2rem; }
+    .box { margin-bottom: 1rem; }
+    /* smaller font to fit more columns */
+    table th, table td { 
+        text-align: center; 
+        vertical-align: middle;
+        font-size: 12px; /* compact */
+        padding: 6px 8px;
+    }
+    .is-buy { background-color: #d4f8d4 !important; }
+    .is-sell { background-color: #ffd4d4 !important; }
+    .is-up { color: #23d160; }
+    .is-down { color: #ff3860; }
+
+    /* NEW COLUMN STYLES */
+    .tf-box {
+      border-radius: 6px;
+      padding: 6px 8px;
+      margin-bottom: 6px;
+      text-align:left;
+      font-size: 11px;
+      line-height: 1.15;
+      color: #111;
+      min-width:140px;
+    }
+    .tf-box b { display:block; font-size:12px; margin-bottom:4px; }
+    .tf-wrap { display:flex; flex-direction:column; gap:6px; align-items:flex-start; }
+
+    /* color states for tf-box */
+    .tf-buy { background:#d4f8d4; border:1px solid #00a74a; }
+    .tf-sell { background:#ffd4d4; border:1px solid #cc0000; }
+    .tf-hold { background:#efefef; border:1px solid #ccc; }
+
+    /* 1m vol styling */
+    .vol-up { color: #0a7f3a; font-weight:700; }
+    .vol-down { color: #a80000; font-weight:700; }
+
+    @media (max-width: 900px) {
+      table th, table td { font-size:11px; padding:4px; }
+      .tf-box { min-width:120px; font-size:10px; padding:4px 6px; }
+    }
+  </style>
+</head>
+<body>
+  <section class="section">
+    <div class="container">
+      <p><span style="font-size:30px;"><strong>Binance Market Watch v4.3</strong></span><br></p>
+
+      <!-- Selected Coin -->
+      <div class="box">
+        <label class="label">Select Coin</label>
+        <div class="select">
+          <select id="coinSelector">
+            <option value="BTCUSDT">BTC/USDT</option>
+            <option value="ETHUSDT">ETH/USDT</option>
+            <option value="BNBUSDT">BNB/USDT</option>
+            <option value="XRPUSDT">XRP/USDT</option>
+            <option value="AVAXUSDT">AVAX/USDT</option>
+            <option value="SOLUSDT">SOL/USDT</option>
+            <option value="LINKUSDT">LINK/USDT</option>
+            <option value="SUIUSDT">SUI/USDT</option>
+            <option value="SEIUSDT">SEI/USDT</option>
+            <option value="YGGUSDT">YGG/USDT</option>
+            <option value="GALAUSDT">GALA/USDT</option>
+            <option value="SKLUSDT">SKL/USDT</option>
+            <option value="KAVAUSDT">KAVA/USDT</option>
+            <option value="HBARUSDT">HBAR/USDT</option>
+            <option value="APTUSDT">APT/USDT</option>
+            <option value="INJUSDT">INJ/USDT</option>
+            <option value="WLDUSDT">WLD/USDT</option>
+            <option value="ARBUSDT">ARB/USDT</option>
+            <option value="ONDOUSDT">ONDO/USDT</option>
+            <option value="TIAUSDT">TIA/USDT</option>
+            <option value="ORDIUSDT">ORDI/USDT</option>
+          </select>
+        </div>
+        <button class="button is-info" id="loadData">Load Data</button>
+      </div>
+
+      <div class="card">
+        <div class="card-content">
+          <h3 class="title is-4">Selected Coin Data</h3>
+
+          <table class="table is-bordered is-fullwidth" id="coinTable">
+            <thead>
+              <tr>
+                <th>Coin</th>
+                <th>Real-Time Price</th>
+                <th>Pings</th>
+                <th>1min Vol USDT</th>
+                <th>Net Vol BTC</th>
+                <th>Net Vol %</th>
+                <th>Recent Total Vol BTC</th>
+                <th>Recent Vol %</th>
+                <th>Recent Net Vol</th>
+                <th>Direction</th>
+
+                <!-- NEW COLUMN HERE -->
+                <th>AI Signals (TF)</th>
+
+                <th>Local Time</th>
+                <th>AI Signal</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- jQuery -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+
+  <script>
+    /* Helpers */
+    function formatCurrency(num) {
+      if (!isFinite(num)) return "0.00";
+      return Number(num).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+    function getLocalTime() {
+      const d = new Date();
+      return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} `
+           + `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`;
+    }
+
+    /* Indicators */
+    function ema(values, period) {
+      const k = 2/(period+1);
+      let arr = [];
+      let prev = values[0];
+      arr.push(prev);
+      for (let i=1;i<values.length;i++){
+        prev = values[i]*k + prev*(1-k);
+        arr.push(prev);
+      }
+      return arr;
+    }
+
+    function computeRSI(closes, period=14){
+      if (!closes || closes.length < period+1) return null;
+      let gains=[], losses=[];
+      for (let i=1;i<closes.length;i++){
+        const d = closes[i]-closes[i-1];
+        gains.push(Math.max(d,0)); losses.push(Math.max(-d,0));
+      }
+      let avgGain = gains.slice(0,period).reduce((a,b)=>a+b,0)/period;
+      let avgLoss = losses.slice(0,period).reduce((a,b)=>a+b,0)/period;
+      for (let i=period;i<gains.length;i++){
+        avgGain = (avgGain*(period-1)+gains[i])/period;
+        avgLoss = (avgLoss*(period-1)+losses[i])/period;
+      }
+      if (avgLoss===0) return 100;
+      const rs = avgGain/avgLoss;
+      return 100 - (100/(1+rs));
+    }
+
+    function computeMACD(closes, fast=12, slow=26, signal=9){
+      if (!closes || closes.length < slow + signal) return null;
+      const emaFast = ema(closes, fast);
+      const emaSlow = ema(closes, slow);
+      const macd = closes.map((_,i)=> emaFast[i] - emaSlow[i]);
+      const sigUnpadded = ema(macd.slice(slow-1), signal);
+      const pad = macd.length - sigUnpadded.length;
+      const signalLine = Array(pad).fill(null).concat(sigUnpadded);
+      return { macd, signal: signalLine };
+    }
+
+    function detectPatterns(c){
+      const out=[];
+      if (!c || c.length<2) return out;
+      const a = c[c.length-1], b = c[c.length-2];
+      const body = Math.abs(a.close - a.open);
+      const range = a.high - a.low;
+      if (range>0 && (body/range) < 0.1) out.push('Doji');
+      const lowerShadow = Math.min(a.open,a.close) - a.low;
+      const upperShadow = a.high - Math.max(a.open,a.close);
+      if (lowerShadow > body*2 && upperShadow < body) out.push('Hammer');
+      if (upperShadow > body*2 && lowerShadow < body) out.push('Shooting Star');
+      const prevBody = Math.abs(b.close - b.open);
+      if (a.close > a.open && b.close < b.open && (a.close - a.open) > prevBody) {
+        if (a.open <= b.close && a.close >= b.open) out.push('Bullish Engulfing');
+      }
+      if (a.close < a.open && b.close > b.open && (prevBody < Math.abs(a.close - a.open))) {
+        if (a.open >= b.close && a.close <= b.open) out.push('Bearish Engulfing');
+      }
+      return out;
+    }
+
+    function generateTFsignal(candles){
+      if (!candles || candles.length < 5) return null;
+      const closes = candles.map(x=>x.close);
+      const rsi = computeRSI(closes);
+      const macdObj = computeMACD(closes);
+      const patterns = detectPatterns(candles);
+      let score = 0;
+      if (patterns.includes('Bullish Engulfing')) { score += 2; }
+      if (patterns.includes('Bearish Engulfing')) { score -= 2; }
+      if (patterns.includes('Hammer')) { score += 1; }
+      if (patterns.includes('Shooting Star')) { score -= 1; }
+      if (rsi !== null) {
+        if (rsi < 30) score += 1;
+        if (rsi > 70) score -= 1;
+      }
+      if (macdObj) {
+        const L = macdObj.macd.length - 1;
+        if (macdObj.signal[L] != null && macdObj.signal[L-1] != null) {
+          const prevDiff = macdObj.macd[L-1] - macdObj.signal[L-1];
+          const curDiff = macdObj.macd[L] - macdObj.signal[L];
+          if (prevDiff < 0 && curDiff > 0) score += 1;
+          if (prevDiff > 0 && curDiff < 0) score -= 1;
+        }
+      }
+      const last = candles[candles.length-1];
+      score += (last.close >= last.open ? 0.5 : -0.5);
+      let label = 'HOLD';
+      if (score >= 2) label = 'BUY';
+      else if (score <= -2) label = 'SELL';
+      return {
+        label,
+        rsi: rsi !== null ? Number(rsi.toFixed(2)) : 'N/A',
+        macdStatus: (macdObj ? (
+          (macdObj.signal[macdObj.signal.length-1] == null) ? '-' :
+          ((macdObj.macd[macdObj.macd.length-1] - macdObj.signal[macdObj.signal.length-1]) > 0 ? 'Bullish' : 'Bearish')
+        ) : '-'),
+        patterns: patterns.length ? patterns.join(', ') : '-',
+        score: Number(score.toFixed(2))
+      };
+    }
+
+    // aggregate signals (1m,5m,15m) -> finalLabel, totalScore, reasons
+    function aggregateSignals(signals) {
+      // signals: { '1m': {...}, '5m': {...}, '15m': {...} }
+      let totalScore = 0;
+      const reasons = [];
+      for (const tf in signals) {
+        const s = signals[tf];
+        if (!s) continue;
+        totalScore += s.score;
+        reasons.push(`${tf.toUpperCase()}: ${s.label} (score ${s.score})`);
+      }
+      // Prefer 5m & 15m agreement with 1m confirmation
+      let finalLabel = 'HOLD';
+      if (signals['5m'] && signals['15m']) {
+        if (signals['5m'].label === 'BUY' && signals['15m'].label === 'BUY' && signals['1m'] && signals['1m'].label === 'BUY') {
+          finalLabel = 'BUY';
+        } else if (signals['5m'].label === 'SELL' && signals['15m'].label === 'SELL' && signals['1m'] && signals['1m'].label === 'SELL') {
+          finalLabel = 'SELL';
+        } else {
+          if (totalScore >= 2.5) finalLabel = 'BUY';
+          else if (totalScore <= -2.5) finalLabel = 'SELL';
+          else finalLabel = 'HOLD';
+        }
+      } else {
+        if (totalScore >= 2) finalLabel = 'BUY';
+        else if (totalScore <= -2) finalLabel = 'SELL';
+        else finalLabel = 'HOLD';
+      }
+      return { finalLabel, totalScore: Number(totalScore.toFixed(2)), reasons };
+    }
+
+    // fetch klines helper
+    function fetchKlines(symbol, interval='1m', limit=80) {
+      return new Promise(resolve => {
+        $.getJSON(`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`)
+        .done(data => {
+          if (!data || !data.length) { resolve([]); return; }
+          resolve(data.map(c=>({
+            open: +c[1], high: +c[2], low: +c[3], close: +c[4], volume: +c[5], quoteVolume: +c[7], time: c[0]
+          })));
+        })
+        .fail(()=> resolve([]));
+      });
+    }
+
+    // main function: fetch all and update table row
+    async function fetchSelectedCoinData(coin) {
+      // fetch klines
+      const [k1, k5, k15] = await Promise.all([
+        fetchKlines(coin, '1m', 80),
+        fetchKlines(coin, '5m', 80),
+        fetchKlines(coin, '15m', 80)
+      ]);
+
+      // generate TF signals
+      const tf1 = generateTFsignal(k1);
+      const tf5 = generateTFsignal(k5);
+      const tf15 = generateTFsignal(k15);
+      const signals = { '1m': tf1, '5m': tf5, '15m': tf15 };
+
+      // aggregated final
+      const agg = aggregateSignals(signals);
+      const finalLabel = agg.finalLabel;
+
+      // build TF HTML with colors
+      function makeTfBox(tf, data) {
+        if (!data) return `<div class="tf-box tf-hold"><b>${tf}</b> No data</div>`;
+        const cls = data.label === 'BUY' ? 'tf-buy' : (data.label === 'SELL' ? 'tf-sell' : 'tf-hold');
+        const macdText = data.macdStatus ? data.macdStatus : '-';
+        return `<div class="tf-box ${cls}">
+          <b>${tf}</b>
+          Label: ${data.label}<br>
+          RSI: ${data.rsi}<br>
+          MACD: ${macdText}<br>
+          Patterns: ${data.patterns}<br>
+          score ${data.score}
+        </div>`;
+      }
+
+      const tfHTML = `<div class="tf-wrap">
+        ${makeTfBox('1M', tf1)}
+        ${makeTfBox('5M', tf5)}
+        ${makeTfBox('15M', tf15)}
+      </div>`;
+
+      // Now fetch ticker (preserve original fields)
+      $.getJSON(`https://api.binance.com/api/v3/ticker/24hr?symbol=${coin}`)
+      .done(data => {
+        const realTimePrice = parseFloat(data.lastPrice).toFixed(2);
+        const pings = Math.floor(Math.random()*10);
+        const netVolBTC = (parseFloat(data.volume) - parseFloat(data.quoteVolume || 0)) / 1000;
+        const direction = netVolBTC >= 0 ? 'UP' : 'DOWN';
+        const directionClass = netVolBTC >= 0 ? 'is-up' : 'is-down';
+        const datetime = getLocalTime();
+
+        // 1min Vol USDT from k1 last candle
+        let oneMinVol = 0;
+        let oneMinChange = 0;
+        let volClass = '';
+        if (k1 && k1.length > 0) {
+          const last1 = k1[k1.length - 1];
+          oneMinVol = last1.quoteVolume || 0;
+          oneMinChange = last1.close - last1.open;
+          volClass = (oneMinChange >= 0) ? 'vol-up' : 'vol-down';
+        }
+        const oneMinSign = (oneMinChange >= 0) ? '+' : '-';
+        const oneMinAbs = Math.abs(oneMinChange).toFixed(4);
+        const oneMinDisplay = `${formatCurrency(oneMinVol)} (${oneMinSign}$${oneMinAbs})`;
+
+        // set row class based on aggregated finalLabel
+        const rowClass = finalLabel === 'BUY' ? 'is-buy' : (finalLabel === 'SELL' ? 'is-sell' : '');
+
+        // AI Signal final cell content (keep legacy info minimal)
+        const aiCellHtml = `<div style="font-weight:700">${finalLabel}</div>
+                            <div style="font-size:11px;color:#333">score:${agg.totalScore}</div>`;
+
+        // compose row preserving original columns and inserting new TF column
+        const row = `
+          <tr class="${rowClass}">
+            <td>${coin}</td>
+            <td>$${realTimePrice}</td>
+            <td>${pings}</td>
+            <td class="${volClass}"><strong>${oneMinDisplay}</strong></td>
+            <td>${formatCurrency(netVolBTC)}</td>
+            <td>${parseFloat(data.priceChangePercent).toFixed(2)}%</td>
+            <td>${formatCurrency(parseFloat(data.volume)/1000)}</td>
+            <td>${(Math.random()*5).toFixed(2)}%</td>
+            <td>${formatCurrency(netVolBTC/2)}</td>
+            <td class="${directionClass}"><b>${direction}</b></td>
+
+            <!-- NEW TF Signals column -->
+            <td style="text-align:left">${tfHTML}</td>
+
+            <td>${datetime}</td>
+            <td>${aiCellHtml}</td>
+          </tr>
+        `;
+
+        // insert row (prepend) and limit rows to 20 (as before)
+        $("#coinTable tbody").prepend(row);
+        if ($("#coinTable tbody tr").length > 20) {
+          $("#coinTable tbody tr:last").remove();
+        }
+      })
+      .fail(() => {
+        console.log("Failed to fetch ticker for", coin);
+      });
+    }
+
+    /* Existing Market Watch (kept but minimal check for element) */
+    function fetchMarketWatchData() {
+        const url = "https://api.binance.com/api/v3/ticker/24hr";
+        $.getJSON(url, function(data) {
+            if ($("#marketWatch tbody").length === 0) return;
+            $("#marketWatch tbody").empty();
+            data.forEach(ticker => {
+                if (ticker.symbol.endsWith('USDT')) {
+                    const priceChangePercent = parseFloat(ticker.priceChangePercent);
+                    const direction = priceChangePercent >= 0 ? 'UP' : 'DOWN';
+                    const directionClass = priceChangePercent >= 0 ? 'is-up' : 'is-down';
+                    const realTimePrice = parseFloat(ticker.lastPrice).toFixed(2);
+                    const row = `
+                        <tr>
+                            <td>${ticker.symbol}</td>
+                            <td>$${realTimePrice}</td>
+                            <td>${priceChangePercent.toFixed(2)}%</td>
+                            <td class="${directionClass}"><b>${direction} <i class="fa fa-arrow-${direction.toLowerCase()}"></i></b></td>
+                        </tr>
+                    `;
+                    $("#marketWatch tbody").append(row);
+                }
+            });
+        });
+    }
+
+    /* Events */
+    $(document).ready(function() {
+      fetchMarketWatchData();
+      setInterval(fetchMarketWatchData, 60000);
+
+      $('#loadData').click(function(){
+        const coin = $('#coinSelector').val();
+        fetchSelectedCoinData(coin);
+      });
+
+      // auto refresh only if a row already exists (keeps original behavior)
+      setInterval(function(){
+        const coin = $('#coinSelector').val();
+        if ($("#coinTable tbody tr").length > 0) {
+          fetchSelectedCoinData(coin);
+        }
+      }, 60000);
+    });
+  </script>
+</body>
+</html>
