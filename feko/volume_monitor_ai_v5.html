@@ -15,7 +15,7 @@
     .navbar { margin-bottom: 2rem; }
     .title { font-size: 2rem; }
     .box { margin-bottom: 1rem; }
-    table th, table td { text-align: center; vertical-align: middle; }
+    table th, table td { text-align: center; vertical-align: middle; font-size: 14px; }
     .is-strong-buy { background-color: #a8e6a8; font-weight: bold; }
     .is-buy { background-color: #d4f8d4; }
     .is-sell { background-color: #ffd4d4; }
@@ -100,6 +100,7 @@
                 <th>Net Vol BTC</th>
                 <th>Volume Trend</th>
                 <th>Direction</th>
+                <th>Signal Strength</th>
                 <th>AI Signal</th>
                 <th>Local Time</th>
               </tr>
@@ -173,35 +174,45 @@
 
     // Enhanced AI Signal Logic
     function aiSignalEnhancer(priceChange, pressureScore, volumeTrend) {
-      let signal, css;
+      let signal, css, strength, strengthValue;
       
       // Strong buy conditions
       if (priceChange > 3 && pressureScore > 20 && volumeTrend > 0) {
         signal = "STRONG BUY 🚀";
         css = "is-strong-buy";
+        strength = "Very Strong";
+        strengthValue = 95;
       }
       // Regular buy conditions
       else if (priceChange > 1.5 && pressureScore > 8) {
         signal = "BUY ⬆";
         css = "is-buy";
+        strength = "Strong";
+        strengthValue = 75;
       }
       // Strong sell conditions
       else if (priceChange < -3 && pressureScore < -20 && volumeTrend < 0) {
         signal = "STRONG SELL ⚠";
         css = "is-strong-sell";
+        strength = "Very Strong";
+        strengthValue = 95;
       }
       // Regular sell conditions
       else if (priceChange < -1.5 && pressureScore < -8) {
         signal = "SELL ⬇";
         css = "is-sell";
+        strength = "Strong";
+        strengthValue = 75;
       }
       // Hold
       else {
-        signal = "HOLD ⏸";
+        signal = "HOLD ⸱";
         css = "";
+        strength = "Weak";
+        strengthValue = Math.abs(pressureScore * 2);
       }
       
-      return { signal, css };
+      return { signal, css, strength, strengthValue };
     }
 
     // Create volume trend bar
@@ -291,6 +302,9 @@
             <td>${createVolumeTrendBar(volumeTrend)}</td>
             <td class="${directionClass}">
               <b>${direction} <i class="fa fa-arrow-${direction.toLowerCase()}"></i></b>
+            </td>
+            <td>
+              <strong>${ai.strength}</strong> (${ai.strengthValue.toFixed(0)}%)
             </td>
             <td><strong>${ai.signal}</strong></td>
             <td>${localTime}</td>
