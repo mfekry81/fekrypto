@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Volume Monitor v5.1 - Scalping Edition</title>
+  <title>AI Volume Monitor v5.2 - Scalping Edition</title>
 
   <!-- Bulma CSS -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.6.2/css/bulma.min.css">
@@ -15,7 +15,7 @@
     .navbar { margin-bottom: 2rem; }
     .title { font-size: 2rem; }
     .box { margin-bottom: 1rem; }
-    table th, table td { text-align: center; vertical-align: middle; }
+    table th, table td { text-align: center; vertical-align: middle; font-size: 13px; }
     .is-buy { background-color: #d4f8d4; }
     .is-sell { background-color: #ffd4d4; }
     .is-up { color: #23d160; }
@@ -23,45 +23,45 @@
     .scalp-strong-buy { 
       background-color: #00d1b2; 
       color: white; 
-      padding: 8px 12px; 
+      padding: 6px 10px; 
       border-radius: 4px; 
       font-weight: bold;
-      font-size: 14px;
+      font-size: 12px;
     }
     .scalp-buy { 
       background-color: #48c774; 
       color: white; 
-      padding: 8px 12px; 
+      padding: 6px 10px; 
       border-radius: 4px; 
       font-weight: bold;
-      font-size: 14px;
+      font-size: 12px;
     }
     .scalp-sell { 
       background-color: #f14668; 
       color: white; 
-      padding: 8px 12px; 
+      padding: 6px 10px; 
       border-radius: 4px; 
       font-weight: bold;
-      font-size: 14px;
+      font-size: 12px;
     }
     .scalp-strong-sell { 
       background-color: #d62828; 
       color: white; 
-      padding: 8px 12px; 
+      padding: 6px 10px; 
       border-radius: 4px; 
       font-weight: bold;
-      font-size: 14px;
+      font-size: 12px;
     }
     .scalp-neutral { 
       background-color: #ffdd57; 
       color: #333; 
-      padding: 8px 12px; 
+      padding: 6px 10px; 
       border-radius: 4px; 
       font-weight: bold;
-      font-size: 14px;
+      font-size: 12px;
     }
     .momentum-bar {
-      height: 25px;
+      height: 20px;
       background: linear-gradient(to right, #d62828 0%, #f14668 25%, #ffdd57 50%, #48c774 75%, #00d1b2 100%);
       border-radius: 4px;
       position: relative;
@@ -76,13 +76,25 @@
       top: 0;
       box-shadow: 0 0 5px rgba(0,0,0,0.5);
     }
+    .hybrid-score-badge {
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-weight: bold;
+      font-size: 12px;
+      display: inline-block;
+    }
+    .score-extreme-bullish { background-color: #00d1b2; color: white; }
+    .score-bullish { background-color: #48c774; color: white; }
+    .score-neutral { background-color: #ffdd57; color: #333; }
+    .score-bearish { background-color: #f14668; color: white; }
+    .score-extreme-bearish { background-color: #d62828; color: white; }
   </style>
 </head>
 <body>
   <section class="section">
     <div class="container">
       <p>
-        <span style="font-size:30px;"><strong>Binance Scalping Monitor v5.1</strong></span><br>
+        <span style="font-size:30px;"><strong>Binance Scalping Monitor v5.2</strong></span><br>
         <span style="font-size:14px; color: #888;">Real-Time Scalping Signals for 5-15min Timeframes</span>
       </p>
 
@@ -131,6 +143,7 @@
                 <th>Momentum Bar</th>
                 <th>Net Vol %</th>
                 <th>Direction</th>
+                <th>Hybrid Score</th>
                 <th>Local Time</th>
                 <th>AI Signal</th>
               </tr>
@@ -268,11 +281,85 @@
         signal = "❌ SELL NOW";
         css = "scalp-sell";
       } else {
-        signal = "⏸️ WAIT";
+        signal = "⸱️ WAIT";
         css = "scalp-neutral";
       }
       
       return { signal, css, score };
+    }
+
+    // Hybrid Scoring System (from v6 advanced algorithm)
+    function calculateHybridScore(oneMinChange, fiveMinMomentum, volume, priceChangePercent) {
+      let hybridScore = 0;
+      
+      // Factor 1: 1-minute price action (30% weight)
+      const oneMinPercentChange = oneMinChange;
+      if (oneMinPercentChange > 0.5) {
+        hybridScore += 30;
+      } else if (oneMinPercentChange > 0.1) {
+        hybridScore += 15;
+      } else if (oneMinPercentChange < -0.5) {
+        hybridScore -= 30;
+      } else if (oneMinPercentChange < -0.1) {
+        hybridScore -= 15;
+      }
+      
+      // Factor 2: 5-minute momentum (25% weight)
+      if (fiveMinMomentum > 1) {
+        hybridScore += 25;
+      } else if (fiveMinMomentum > 0.3) {
+        hybridScore += 12;
+      } else if (fiveMinMomentum < -1) {
+        hybridScore -= 25;
+      } else if (fiveMinMomentum < -0.3) {
+        hybridScore -= 12;
+      }
+      
+      // Factor 3: Volume strength (20% weight)
+      if (volume > 50000) {
+        hybridScore += oneMinPercentChange > 0 ? 20 : -20;
+      } else if (volume > 20000) {
+        hybridScore += oneMinPercentChange > 0 ? 10 : -10;
+      }
+      
+      // Factor 4: 24h price change (15% weight)
+      if (priceChangePercent > 5) {
+        hybridScore += 15;
+      } else if (priceChangePercent > 2) {
+        hybridScore += 8;
+      } else if (priceChangePercent < -5) {
+        hybridScore -= 15;
+      } else if (priceChangePercent < -2) {
+        hybridScore -= 8;
+      }
+      
+      // Factor 5: Volume-momentum alignment (10% weight)
+      if ((volume > 30000 && fiveMinMomentum > 0.5) || (volume > 30000 && oneMinPercentChange > 0.3)) {
+        hybridScore += 10;
+      } else if ((volume > 30000 && fiveMinMomentum < -0.5) || (volume > 30000 && oneMinPercentChange < -0.3)) {
+        hybridScore -= 10;
+      }
+      
+      // Determine label and styling
+      let label, cssClass;
+      if (hybridScore > 60) {
+        label = "EXTREME BULLISH";
+        cssClass = "score-extreme-bullish";
+      } else if (hybridScore > 30) {
+        label = "BULLISH";
+        cssClass = "score-bullish";
+      } else if (hybridScore >= -30) {
+        label = "NEUTRAL";
+        cssClass = "score-neutral";
+      } else if (hybridScore >= -60) {
+        label = "BEARISH";
+        cssClass = "score-bearish";
+      } else {
+        label = "EXTREME BEARISH";
+        cssClass = "score-extreme-bearish";
+      }
+      
+      return { hybridScore, label, cssClass };
     }
 
     // Create momentum bar
@@ -313,6 +400,9 @@
         // Calculate scalping signal
         const scalpSignal = calculateScalpSignal(oneMinChange, fiveMinMomentum, oneMinVolUSDT, netVolPercent);
         
+        // Calculate Hybrid Score
+        const hybridAnalysis = calculateHybridScore(oneMinChange, fiveMinMomentum, oneMinVolUSDT, netVolPercent);
+        
         // Format 5min momentum
         const momentumClass = fiveMinMomentum >= 0 ? 'is-up' : 'is-down';
         const momentumDisplay = `${fiveMinMomentum >= 0 ? '+' : ''}${fiveMinMomentum.toFixed(2)}%`;
@@ -327,6 +417,12 @@
             <td>${createMomentumBar(scalpSignal.score)}</td>
             <td>${netVolPercent.toFixed(2)}%</td>
             <td class="${directionClass}"><b>${direction} <i class="fa fa-arrow-${direction.toLowerCase()}"></i></b></td>
+            <td>
+              <span class="hybrid-score-badge ${hybridAnalysis.cssClass}">
+                ${hybridAnalysis.label}
+              </span><br>
+              <small><strong>${hybridAnalysis.hybridScore.toFixed(0)}</strong></small>
+            </td>
             <td>${datetime}</td>
             <td><b>${ai.signal}</b></td>
           </tr>
