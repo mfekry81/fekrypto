@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Volume Monitor v6 - Advanced</title>
+
+  <!-- Bulma CSS -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.6.2/css/bulma.min.css">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+
+  <style>
+    body { background: #f9f9f9; }
+    .navbar { margin-bottom: 2rem; }
+    .title { font-size: 2rem; }
+    .box { margin-bottom: 1rem; }
+    table th, table td { text-align: center; vertical-align: middle; font-size: 13px; }
+    .is-strong-buy { background-color: #a8e6a8; font-weight: bold; }
+    .is-buy { background-color: #d4f8d4; }
+    .is-sell { background-color: #ffd4d4; }
+    .is-strong-sell { background-color: #ffb3b3; font-weight: bold; }
+    .is-up { color: #23d160; }
+    .is-down { color: #ff3860; }
+    .pressure-indicator {
+      padding: 5px 10px;
+      border-radius: 4px;
+      font-weight: bold;
+      display: inline-block;
+      font-size: 11px;
+    }
+    .pressure-buying { background-color: #48c774; color: white; }
+    .pressure-selling { background-color: #f14668; color: white; }
+    .pressure-neutral { background-color: #ffdd57; color: #333; }
+    .volume-bar {
+      height: 20px;
+      background: linear-gradient(to right, #f14668 0%, #ffdd57 50%, #48c774 100%);
+      border-radius: 4px;
+      position: relative;
+      margin: 5px 0;
+    }
+    .volume-indicator {
+      position: absolute;
+      width: 4px;
+      height: 100%;
+      background: #000;
+      top: 0;
+    }
+    .confidence-meter {
+      width: 100%;
+      height: 8px;
+      background: #e0e0e0;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: 3px;
+    }
+    .confidence-fill {
+      height: 100%;
+      transition: width 0.3s ease;
+    }
+    .confidence-high { background: #48c774; }
+    .confidence-medium { background: #ffdd57; }
+    .confidence-low { background: #f14668; }
+    .algorithm-badge {
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 3px;
+      background: #3273dc;
+      color: white;
+      margin-left: 5px;
+    }
+  </style>
+</head>
+<body>
+  <section class="section">
+    <div class="container">
+      <p>
+        <span style="font-size:30px;"><strong>Binance Market Watch v6</strong></span>
+        <span class="algorithm-badge">HYBRID AI ALGORITHM</span><br>
+        <span style="font-size:12px; color: #666;">Advanced Multi-Factor Analysis: RSI + Volume Delta + Price Momentum + Order Flow</span>
+      </p>
+
+      <!-- Selected Coin Data Section -->
+      <div class="box">
+        <label class="label">Select Coin</label>
+        <div class="select">
+          <select id="coinSelector">
+            <option value="BTCUSDT">BTC/USDT</option>
+            <option value="ETHUSDT">ETH/USDT</option>
+            <option value="BNBUSDT">BNB/USDT</option>
+            <option value="XRPUSDT">XRP/USDT</option>
+            <option value="AVAXUSDT">AVAX/USDT</option>
+            <option value="SOLUSDT">SOL/USDT</option>
+            <option value="LINKUSDT">LINK/USDT</option>
+            <option value="SUIUSDT">SUI/USDT</option>
+            <option value="SEIUSDT">SEI/USDT</option>
+            <option value="YGGUSDT">YGG/USDT</option>
+            <option value="GALAUSDT">GALA/USDT</option>
+            <option value="SKLUSDT">SKL/USDT</option>
+            <option value="KAVAUSDT">KAVA/USDT</option>
+            <option value="HBARUSDT">HBAR/USDT</option>
+            <option value="APTUSDT">APT/USDT</option>
+            <option value="INJUSDT">INJ/USDT</option>
+            <option value="WLDUSDT">WLD/USDT</option>
+            <option value="ARBUSDT">ARB/USDT</option>
+            <option value="ONDOUSDT">ONDO/USDT</option>
+            <option value="TIAUSDT">TIA/USDT</option>
+            <option value="ORDIUSDT">ORDI/USDT</option>
+          </select>
+        </div>
+        <button class="button is-info" id="loadData">Load Data</button>
+        <button class="button is-warning" id="clearData">Clear History</button>
+      </div>
+
+      <div class="card">
+        <div class="card-content">
+          <h3 class="title is-4">Advanced Real-Time Analysis</h3>
+          <table class="table is-bordered is-fullwidth" id="coinTable">
+            <thead>
+              <tr>
+                <th>Coin</th>
+                <th>Price</th>
+                <th>24h %</th>
+                <th>RSI (14)</th>
+                <th>Vol Delta</th>
+                <th>Momentum</th>
+                <th>Order Flow</th>
+                <th>Pressure</th>
+                <th>Direction</th>
+                <th>Confidence</th>
+                <th>AI Signal</th>
+                <th>Time</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- jQuery -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+
+  <script>
+    // Store historical data for each coin
+    const historicalData = {};
+
+    // Format number as currency
+    function formatCurrency(num) {
+      return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    // Get local time
+    function getLocalTime() {
+      const now = new Date();
+      return now.toLocaleString('en-US', { 
+        year: 'numeric', 
+        month: '2-digit', 
+        day: '2-digit', 
+        hour: '2-digit', 
+        minute: '2-digit', 
+        second: '2-digit',
+        hour12: false 
+      });
+    }
+
+    // Calculate RSI (Relative Strength Index)
+    function calculateRSI(prices, period = 14) {
+      if (prices.length < period + 1) return 50; // Default neutral
+      
+      let gains = 0;
+      let losses = 0;
+      
+      for (let i = prices.length - period; i < prices.length; i++) {
+        const change = prices[i] - prices[i - 1];
+        if (change > 0) {
+          gains += change;
+        } else {
+          losses += Math.abs(change);
+        }
+      }
+      
+      const avgGain = gains / period;
+      const avgLoss = losses / period;
+      
+      if (avgLoss === 0) return 100;
+      const rs = avgGain / avgLoss;
+      const rsi = 100 - (100 / (1 + rs));
+      
+      return rsi;
+    }
+
+    // Calculate Volume Delta (Buy vs Sell pressure)
+    function calculateVolumeDelta(candles) {
+      let buyVolume = 0;
+      let sellVolume = 0;
+      
+      candles.forEach(candle => {
+        const open = parseFloat(candle[1]);
+        const close = parseFloat(candle[4]);
+        const volume = parseFloat(candle[5]);
+        
+        if (close > open) {
+          buyVolume += volume;
+        } else if (close < open) {
+          sellVolume += volume;
+        } else {
+          // Neutral - split volume
+          buyVolume += volume / 2;
+          sellVolume += volume / 2;
+        }
+      });
+      
+      const totalVolume = buyVolume + sellVolume;
+      const delta = totalVolume > 0 ? ((buyVolume - sellVolume) / totalVolume) * 100 : 0;
+      
+      return { delta, buyVolume, sellVolume };
+    }
+
+    // Calculate Price Momentum (Rate of change)
+    function calculateMomentum(prices, period = 10) {
+      if (prices.length < period) return 0;
+      
+      const currentPrice = prices[prices.length - 1];
+      const pastPrice = prices[prices.length - period];
+      
+      return ((currentPrice - pastPrice) / pastPrice) * 100;
+    }
+
+    // Calculate Order Flow Imbalance
+    function calculateOrderFlow(candles) {
+      let imbalance = 0;
+      
+      candles.forEach((candle, idx) => {
+        const open = parseFloat(candle[1]);
+        const high = parseFloat(candle[2]);
+        const low = parseFloat(candle[3]);
+        const close = parseFloat(candle[4]);
+        const volume = parseFloat(candle[5]);
+        
+        // Calculate where price closed in the range
+        const range = high - low;
+        if (range > 0) {
+          const closePosition = (close - low) / range; // 0 to 1
+          const weight = (closePosition - 0.5) * 2; // -1 to 1
+          imbalance += weight * volume;
+        }
+      });
+      
+      return imbalance;
+    }
+
+    // HYBRID AI ALGORITHM - Multi-Factor Analysis
+    function hybridAIAnalysis(rsi, volumeDelta, momentum, orderFlow, priceChange) {
+      let score = 0;
+      let factors = [];
+      
+      // Factor 1: RSI Analysis (Oversold/Overbought)
+      if (rsi < 30) {
+        score += 25; // Oversold - bullish
+        factors.push("RSI Oversold");
+      } else if (rsi > 70) {
+        score -= 25; // Overbought - bearish
+        factors.push("RSI Overbought");
+      } else if (rsi >= 40 && rsi <= 60) {
+        score += 5; // Neutral zone is slightly positive
+      }
+      
+      // Factor 2: Volume Delta (Buy/Sell pressure)
+      if (volumeDelta > 20) {
+        score += 30; // Strong buying pressure
+        factors.push("Strong Buy Volume");
+      } else if (volumeDelta > 5) {
+        score += 15; // Moderate buying
+        factors.push("Buy Volume");
+      } else if (volumeDelta < -20) {
+        score -= 30; // Strong selling pressure
+        factors.push("Strong Sell Volume");
+      } else if (volumeDelta < -5) {
+        score -= 15; // Moderate selling
+        factors.push("Sell Volume");
+      }
+      
+      // Factor 3: Price Momentum
+      if (momentum > 3) {
+        score += 20; // Strong upward momentum
+        factors.push("Strong Momentum↑");
+      } else if (momentum > 1) {
+        score += 10; // Moderate momentum
+        factors.push("Momentum↑");
+      } else if (momentum < -3) {
+        score -= 20; // Strong downward momentum
+        factors.push("Strong Momentum↓");
+      } else if (momentum < -1) {
+        score -= 10; // Moderate negative momentum
+        factors.push("Momentum↓");
+      }
+      
+      // Factor 4: Order Flow Imbalance
+      const orderFlowNormalized = orderFlow / 1000000; // Normalize
+      if (orderFlowNormalized > 5) {
+        score += 15;
+        factors.push("Order Flow+");
+      } else if (orderFlowNormalized < -5) {
+        score -= 15;
+        factors.push("Order Flow-");
+      }
+      
+      // Factor 5: Price Change Confirmation
+      if (priceChange > 2 && score > 0) {
+        score *= 1.2; // Amplify bullish signal
+      } else if (priceChange < -2 && score < 0) {
+        score *= 1.2; // Amplify bearish signal
+      }
+      
+      // Calculate confidence (0-100)
+      const confidence = Math.min(100, Math.abs(score));
+      
+      // Determine signal
+      let signal, css, direction;
+      if (score > 60) {
+        signal = "STRONG BUY 🚀";
+        css = "is-strong-buy";
+        direction = "BULLISH";
+      } else if (score > 30) {
+        signal = "BUY ⬆";
+        css = "is-buy";
+        direction = "BULLISH";
+      } else if (score < -60) {
+        signal = "STRONG SELL ⚠";
+        css = "is-strong-sell";
+        direction = "BEARISH";
+      } else if (score < -30) {
+        signal = "SELL ⬇";
+        css = "is-sell";
+        direction = "BEARISH";
+      } else {
+        signal = "HOLD ⸱";
+        css = "";
+        direction = "NEUTRAL";
+      }
+      
+      return { signal, css, confidence, score, factors, direction };
+    }
+
+    // Fetch historical candle data
+    async function fetchCandleData(coin, interval = '5m', limit = 20) {
+      return new Promise((resolve, reject) => {
+        const url = `https://api.binance.com/api/v3/klines?symbol=${coin}&interval=${interval}&limit=${limit}`;
+        
+        $.getJSON(url, function(data) {
+          resolve(data);
+        }).fail(function() {
+          resolve([]);
+        });
+      });
+    }
+
+    // Fetch data and analyze
+    async function fetchSelectedCoinData(coin) {
+      try {
+        // Fetch 5-minute candles for analysis
+        const candles = await fetchCandleData(coin, '5m', 20);
+        
+        if (candles.length === 0) {
+          console.error("No candle data available");
+          return;
+        }
+        
+        // Extract closing prices
+        const prices = candles.map(c => parseFloat(c[4]));
+        
+        // Calculate indicators
+        const rsi = calculateRSI(prices, 14);
+        const volumeDeltaData = calculateVolumeDelta(candles);
+        const momentum = calculateMomentum(prices, 10);
+        const orderFlow = calculateOrderFlow(candles);
+        
+        // Fetch 24h ticker data
+        const tickerUrl = `https://api.binance.com/api/v3/ticker/24hr?symbol=${coin}`;
+        
+        $.getJSON(tickerUrl, function(data) {
+          const realTimePrice = parseFloat(data.lastPrice).toFixed(2);
+          const priceChange = parseFloat(data.priceChangePercent);
+          
+          // Run hybrid AI analysis
+          const analysis = hybridAIAnalysis(
+            rsi,
+            volumeDeltaData.delta,
+            momentum,
+            orderFlow,
+            priceChange
+          );
+          
+          // Determine confidence color
+          let confidenceClass = 'confidence-low';
+          if (analysis.confidence > 70) confidenceClass = 'confidence-high';
+          else if (analysis.confidence > 40) confidenceClass = 'confidence-medium';
+          
+          // Format displays
+          const priceChangeClass = priceChange >= 0 ? 'is-up' : 'is-down';
+          const directionClass = analysis.direction === 'BULLISH' ? 'is-up' : analysis.direction === 'BEARISH' ? 'is-down' : '';
+          
+          const rsiColor = rsi < 30 ? 'is-up' : rsi > 70 ? 'is-down' : '';
+          const volumeDeltaColor = volumeDeltaData.delta > 10 ? 'is-up' : volumeDeltaData.delta < -10 ? 'is-down' : '';
+          const momentumColor = momentum > 1 ? 'is-up' : momentum < -1 ? 'is-down' : '';
+          
+          const localTime = getLocalTime();
+          
+          const row = `
+            <tr class="${analysis.css}">
+              <td><strong>${coin}</strong></td>
+              <td>$${realTimePrice}</td>
+              <td class="${priceChangeClass}"><strong>${priceChange.toFixed(2)}%</strong></td>
+              <td class="${rsiColor}"><strong>${rsi.toFixed(1)}</strong></td>
+              <td class="${volumeDeltaColor}"><strong>${volumeDeltaData.delta.toFixed(1)}%</strong></td>
+              <td class="${momentumColor}"><strong>${momentum.toFixed(2)}%</strong></td>
+              <td><strong>${(orderFlow / 1000000).toFixed(2)}M</strong></td>
+              <td>
+                <span class="pressure-indicator ${analysis.direction === 'BULLISH' ? 'pressure-buying' : analysis.direction === 'BEARISH' ? 'pressure-selling' : 'pressure-neutral'}">
+                  ${analysis.direction}
+                </span>
+              </td>
+              <td class="${directionClass}">
+                <b>${analysis.direction} <i class="fa fa-arrow-${analysis.direction === 'BULLISH' ? 'up' : analysis.direction === 'BEARISH' ? 'down' : 'right'}"></i></b>
+              </td>
+              <td>
+                <strong>${analysis.confidence.toFixed(0)}%</strong>
+                <div class="confidence-meter">
+                  <div class="confidence-fill ${confidenceClass}" style="width: ${analysis.confidence}%"></div>
+                </div>
+              </td>
+              <td><strong>${analysis.signal}</strong></td>
+              <td style="font-size: 11px;">${localTime}</td>
+            </tr>
+          `;
+
+          $("#coinTable tbody").prepend(row);
+          if ($("#coinTable tbody tr").length > 20) {
+            $("#coinTable tbody tr:last").remove();
+          }
+        }).fail(function() {
+          console.error("Failed to fetch ticker data for " + coin);
+        });
+        
+      } catch (error) {
+        console.error("Error in analysis:", error);
+      }
+    }
+
+    $(document).ready(function() {
+      // Load data button
+      $('#loadData').click(function(){
+        const coin = $('#coinSelector').val();
+        fetchSelectedCoinData(coin);
+      });
+
+      // Clear data button
+      $('#clearData').click(function(){
+        $("#coinTable tbody").empty();
+      });
+
+      // Auto-refresh every 30 seconds
+      setInterval(function(){
+        const coin = $('#coinSelector').val();
+        if ($("#coinTable tbody tr").length > 0) {
+          fetchSelectedCoinData(coin);
+        }
+      }, 30000);
+    });
+  </script>
+</body>
+</html>
