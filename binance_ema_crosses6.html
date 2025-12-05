@@ -1,0 +1,1237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Binance USDT Market Watch v6</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-primary: #0c0f15;
+            --bg-secondary: #161a25;
+            --bg-card: #1e2332;
+            --text-primary: #eaecef;
+            --text-secondary: #9aa0a6;
+            --accent-gold: #f0b90b;
+            --accent-green: #16c784;
+            --accent-red: #ea3943;
+            --accent-orange: #f0b90b;
+            --accent-blue: #3b82f6;
+            --border-radius: 8px;
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: var(--bg-secondary);
+            border-radius: var(--border-radius);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        h1 {
+            color: var(--accent-gold);
+            margin-bottom: 10px;
+            font-size: 2.2rem;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+
+        .stats-bar {
+            display: flex;
+            justify-content: space-between;
+            background: var(--bg-secondary);
+            padding: 15px;
+            border-radius: var(--border-radius);
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            margin: 5px 10px;
+        }
+
+        .stat-badge {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .bullish { background-color: var(--accent-green); }
+        .bearish { background-color: var(--accent-red); }
+        .potential { background-color: var(--accent-orange); }
+        .strong-bullish { background-color: var(--accent-blue); }
+
+        .connection-status {
+            display: flex;
+            align-items: center;
+        }
+
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .connected { background-color: var(--accent-green); }
+        .disconnected { background-color: var(--accent-red); }
+        .connecting { background-color: var(--accent-orange); }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
+            background: var(--bg-secondary);
+            padding: 15px;
+            border-radius: var(--border-radius);
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        select, input, button {
+            padding: 10px 15px;
+            background: var(--bg-card);
+            border: 1px solid #2a2f3d;
+            border-radius: var(--border-radius);
+            color: var(--text-primary);
+            outline: none;
+        }
+
+        select:focus, input:focus {
+            border-color: var(--accent-gold);
+        }
+
+        button {
+            background: var(--accent-gold);
+            color: var(--bg-primary);
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: var(--transition);
+        }
+
+        button:hover {
+            background: #d4a306;
+            transform: translateY(-2px);
+        }
+
+        .search-box {
+            position: relative;
+            flex-grow: 1;
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+        }
+
+        .search-box input {
+            width: 100%;
+            padding-left: 40px;
+        }
+
+        .cards-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            transition: var(--transition);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+        }
+
+        .card.bullish::before { background: var(--accent-green); }
+        .card.bearish::before { background: var(--accent-red); }
+        .card.potential::before { background: var(--accent-orange); }
+        .card.strong-bullish::before { background: var(--accent-blue); }
+
+        .card.bullish {
+            border-left: 4px solid var(--accent-green);
+        }
+
+        .card.bearish {
+            border-left: 4px solid var(--accent-red);
+        }
+
+        .card.potential {
+            border-left: 4px solid var(--accent-orange);
+        }
+
+        .card.strong-bullish {
+            border-left: 4px solid var(--accent-blue);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .symbol {
+            font-size: 1.4rem;
+            font-weight: 700;
+        }
+
+        .price {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .price.up { color: var(--accent-green); }
+        .price.down { color: var(--accent-red); }
+
+        .card-body {
+            margin-bottom: 15px;
+        }
+
+        .ema-values {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .ema-value {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px solid #2a2f3d;
+        }
+
+        .ema-label {
+            color: var(--text-secondary);
+        }
+
+        .signal {
+            display: inline-block;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        .signal.buy {
+            background: rgba(22, 199, 132, 0.2);
+            color: var(--accent-green);
+        }
+
+        .signal.sell {
+            background: rgba(234, 57, 67, 0.2);
+            color: var(--accent-red);
+        }
+
+        .signal.potential {
+            background: rgba(240, 185, 11, 0.2);
+            color: var(--accent-orange);
+        }
+
+        .signal.strong-buy {
+            background: rgba(59, 130, 246, 0.2);
+            color: var(--accent-blue);
+        }
+
+        .card-footer {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .volume {
+            display: flex;
+            align-items: center;
+        }
+
+        .volume i {
+            margin-right: 5px;
+        }
+
+        .glow {
+            animation: glow 2s infinite;
+        }
+
+        @keyframes glow {
+            0% { box-shadow: 0 0 5px rgba(22, 199, 132, 0.5); }
+            50% { box-shadow: 0 0 20px rgba(22, 199, 132, 0.8); }
+            100% { box-shadow: 0 0 5px rgba(22, 199, 132, 0.5); }
+        }
+
+        .glow-blue {
+            animation: glow-blue 2s infinite;
+        }
+
+        @keyframes glow-blue {
+            0% { box-shadow: 0 0 5px rgba(59, 130, 246, 0.5); }
+            50% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.8); }
+            100% { box-shadow: 0 0 5px rgba(59, 130, 246, 0.5); }
+        }
+
+        .shimmer {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .shimmer::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: rgba(255, 255, 255, 0.1);
+            transform: rotate(45deg);
+            animation: shimmer 3s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) rotate(45deg); }
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-top: 30px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-secondary);
+        }
+
+        .loading i {
+            font-size: 2rem;
+            margin-bottom: 15px;
+            color: var(--accent-gold);
+        }
+
+        .last-update {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .direction-indicator {
+            display: inline-flex;
+            align-items: center;
+            margin-left: 5px;
+        }
+
+        .direction-up {
+            color: var(--accent-green);
+        }
+
+        .direction-down {
+            color: var(--accent-red);
+        }
+
+        .signal-explanation {
+            font-size: 0.8rem;
+            margin-top: 5px;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        .signal-strength {
+            display: flex;
+            align-items: center;
+            margin-top: 5px;
+            font-size: 0.8rem;
+        }
+
+        .strength-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+
+        .strength-high { background-color: var(--accent-green); }
+        .strength-medium { background-color: var(--accent-orange); }
+        .strength-low { background-color: var(--accent-red); }
+
+        @media (max-width: 768px) {
+            .controls {
+                flex-direction: column;
+            }
+            
+            .control-group {
+                width: 100%;
+                justify-content: space-between;
+            }
+            
+            .search-box {
+                order: -1;
+            }
+            
+            .cards-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-chart-line"></i> Binance USDT Market Watch v6</h1>
+            <p class="subtitle">Enhanced EMA 9/20/50 Cross Signals with Multi-Condition Detection</p>
+        </header>
+
+        <div class="last-update" id="last-update">Last updated: <span id="update-time">-</span> | Next update in: <span id="next-update">-</span> seconds</div>
+
+        <div class="stats-bar">
+            <div class="stat-item">
+                <span class="stat-badge strong-bullish"></span>
+                <span>Strong Bullish: <span id="strong-bullish-count">0</span></span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-badge bullish"></span>
+                <span>Bullish Crosses: <span id="bullish-count">0</span></span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-badge bearish"></span>
+                <span>Bearish Crosses: <span id="bearish-count">0</span></span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-badge potential"></span>
+                <span>Potential Crosses: <span id="potential-count">0</span></span>
+            </div>
+            <div class="stat-item connection-status">
+                <span class="status-indicator connecting" id="connection-status"></span>
+                <span id="connection-text">Connecting to Binance...</span>
+            </div>
+        </div>
+
+        <div class="controls">
+            <div class="control-group">
+                <label for="timeframe">Timeframe:</label>
+                <select id="timeframe">
+                    <option value="5m">5 Minutes</option>
+                    <option value="15m">15 Minutes</option>
+                    <option value="1h">1 Hour</option>
+                    <option value="4h">4 Hours</option>
+                    <option value="1d">1 Day</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label for="signal-type">Signal Type:</label>
+                <select id="signal-type">
+                    <option value="strong-bullish">Strong Bullish</option>
+                    <option value="bullish">Bullish Crosses</option>
+                    <option value="bearish">Bearish Crosses</option>
+                    <option value="potential">Potential Crosses</option>
+                    <option value="all">All Signals</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label for="min-volume">Min Volume (USDT):</label>
+                <input type="number" id="min-volume" value="0" min="0">
+            </div>
+
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="search" placeholder="Search coins...">
+            </div>
+
+            <button id="refresh"><i class="fas fa-sync-alt"></i> Refresh</button>
+        </div>
+
+        <div class="cards-container" id="cards-container">
+            <div class="loading">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Loading market data and calculating EMA signals...</p>
+            </div>
+        </div>
+
+        <footer>
+            <p>Disclaimer: This tool is for educational purposes only. Cryptocurrency trading involves risk.</p>
+            <p>Data provided by Binance WebSocket API | EMA calculations updated in real-time</p>
+        </footer>
+    </div>
+
+    <script>
+        // Configuration
+        const config = {
+            binanceWebSocket: 'wss://stream.binance.com:9443/ws',
+            binanceAPI: 'https://api.binance.com/api/v3',
+            reconnectInterval: 5000,
+            updateInterval: 1000,
+            dataRefreshInterval: 300000, // 5 minute for coin data refresh
+            emaPeriods: [9, 20, 50],
+            touchThreshold: 0.1 // Percentage threshold for EMA touch detection
+        };
+
+        // Application state
+        const state = {
+            ws: null,
+            symbols: [],
+            klineData: {},
+            emaData: {},
+            signals: {},
+            connectionStatus: 'connecting',
+            selectedTimeframe: '5m',
+            selectedSignalType: 'bullish',
+            minVolume: 100000,
+            searchTerm: '',
+            strongBullishCount: 0,
+            bullishCount: 0,
+            bearishCount: 0,
+            potentialCount: 0,
+            lastUpdateTime: null,
+            nextUpdateTime: null,
+            dataRefreshTimer: null
+        };
+
+        // DOM Elements
+        const elements = {
+            cardsContainer: document.getElementById('cards-container'),
+            connectionStatus: document.getElementById('connection-status'),
+            connectionText: document.getElementById('connection-text'),
+            strongBullishCount: document.getElementById('strong-bullish-count'),
+            bullishCount: document.getElementById('bullish-count'),
+            bearishCount: document.getElementById('bearish-count'),
+            potentialCount: document.getElementById('potential-count'),
+            timeframe: document.getElementById('timeframe'),
+            signalType: document.getElementById('signal-type'),
+            minVolume: document.getElementById('min-volume'),
+            search: document.getElementById('search'),
+            refresh: document.getElementById('refresh'),
+            updateTime: document.getElementById('update-time'),
+            nextUpdate: document.getElementById('next-update')
+        };
+
+        // Initialize the application
+        function init() {
+            // Fetch USDT pairs from Binance
+            fetchUSDTPairs();
+            
+            // Set up event listeners
+            setupEventListeners();
+            
+            // Initialize WebSocket connection
+            initWebSocket();
+            
+            // Start the data refresh timer
+            startDataRefreshTimer();
+        }
+
+        // Start the 1-minute data refresh timer
+        function startDataRefreshTimer() {
+            // Clear existing timer if any
+            if (state.dataRefreshTimer) {
+                clearInterval(state.dataRefreshTimer);
+            }
+            
+            // Set new timer
+            state.dataRefreshTimer = setInterval(() => {
+                refreshAllData();
+            }, config.dataRefreshInterval);
+            
+            // Update next refresh time display
+            updateNextRefreshTime();
+        }
+
+        // Update the next refresh time display
+        function updateNextRefreshTime() {
+            if (state.lastUpdateTime) {
+                const nextUpdate = new Date(state.lastUpdateTime.getTime() + config.dataRefreshInterval);
+                state.nextUpdateTime = nextUpdate;
+                
+                // Update the display every second
+                const updateCountdown = () => {
+                    const now = new Date();
+                    const diff = Math.max(0, Math.floor((state.nextUpdateTime - now) / 1000));
+                    elements.nextUpdate.textContent = diff;
+                    
+                    if (diff > 0) {
+                        setTimeout(updateCountdown, 1000);
+                    }
+                };
+                
+                updateCountdown();
+            }
+        }
+
+        // Refresh all data (historical and signals)
+        function refreshAllData() {
+            console.log('Refreshing all coin data...');
+            fetchHistoricalData();
+            state.lastUpdateTime = new Date();
+            elements.updateTime.textContent = state.lastUpdateTime.toLocaleTimeString();
+            updateNextRefreshTime();
+        }
+
+        // Fetch all USDT trading pairs from Binance
+        async function fetchUSDTPairs() {
+            try {
+                const response = await fetch(`${config.binanceAPI}/exchangeInfo`);
+                const data = await response.json();
+                
+                // Filter USDT pairs and extract symbols
+                state.symbols = data.symbols
+                    .filter(symbol => symbol.quoteAsset === 'USDT' && symbol.status === 'TRADING')
+                    .map(symbol => symbol.symbol);
+                
+                console.log(`Found ${state.symbols.length} USDT trading pairs`);
+                
+                // Fetch historical data for initial EMA calculation
+                fetchHistoricalData();
+            } catch (error) {
+                console.error('Error fetching USDT pairs:', error);
+                // Retry after 5 seconds
+                setTimeout(fetchUSDTPairs, 5000);
+            }
+        }
+
+        // Fetch historical kline data for EMA calculation
+        async function fetchHistoricalData() {
+            const timeframe = state.selectedTimeframe;
+            const limit = 100; // Number of candles to fetch
+            
+            // Clear existing data
+            state.klineData = {};
+            state.emaData = {};
+            
+            // Show loading state
+            elements.cardsContainer.innerHTML = `
+                <div class="loading">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Loading historical data and calculating EMAs...</p>
+                </div>
+            `;
+            
+            // Fetch data for each symbol (in batches to avoid rate limits)
+            const batchSize = 10;
+            for (let i = 0; i < state.symbols.length; i += batchSize) {
+                const batch = state.symbols.slice(i, i + batchSize);
+                await Promise.all(batch.map(symbol => fetchSymbolData(symbol, timeframe, limit)));
+                
+                // Update progress
+                const progress = Math.min(i + batchSize, state.symbols.length);
+                if (elements.cardsContainer.querySelector('.loading p')) {
+                    elements.cardsContainer.querySelector('.loading p').textContent = 
+                        `Loading historical data: ${progress}/${state.symbols.length} symbols...`;
+                }
+            }
+            
+            // Calculate initial EMAs
+            calculateAllEMAs();
+            
+            // Update the display
+            updateDisplay();
+        }
+
+        // Fetch kline data for a specific symbol
+        async function fetchSymbolData(symbol, interval, limit) {
+            try {
+                const response = await fetch(
+                    `${config.binanceAPI}/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`
+                );
+                const klines = await response.json();
+                
+                // Store kline data
+                state.klineData[symbol] = klines.map(k => ({
+                    time: k[0],
+                    open: parseFloat(k[1]),
+                    high: parseFloat(k[2]),
+                    low: parseFloat(k[3]),
+                    close: parseFloat(k[4]),
+                    volume: parseFloat(k[5])
+                }));
+            } catch (error) {
+                console.error(`Error fetching data for ${symbol}:`, error);
+            }
+        }
+
+        // Calculate EMA for a given period
+        function calculateEMA(data, period) {
+            if (data.length < period) return null;
+            
+            // Calculate SMA for the first value
+            let sma = 0;
+            for (let i = 0; i < period; i++) {
+                sma += data[data.length - 1 - i].close;
+            }
+            sma /= period;
+            
+            // Calculate EMA using the SMA as starting point
+            const multiplier = 2 / (period + 1);
+            let ema = sma;
+            
+            for (let i = data.length - period - 1; i >= 0; i--) {
+                ema = (data[i].close - ema) * multiplier + ema;
+            }
+            
+            return ema;
+        }
+
+        // Calculate all EMAs for all symbols
+        function calculateAllEMAs() {
+            state.emaData = {};
+            const periods = config.emaPeriods;
+            
+            for (const symbol in state.klineData) {
+                if (state.klineData[symbol] && state.klineData[symbol].length >= Math.max(...periods)) {
+                    state.emaData[symbol] = {};
+                    
+                    for (const period of periods) {
+                        state.emaData[symbol][`ema${period}`] = calculateEMA(state.klineData[symbol], period);
+                    }
+                    
+                    // Detect signals
+                    detectSignals(symbol);
+                }
+            }
+        }
+
+        // Check if EMA 9 is touching EMA 50
+        function isEMATouching(ema9, ema50) {
+            const diff = Math.abs(ema9 - ema50);
+            const threshold = (ema9 + ema50) / 2 * (config.touchThreshold / 100);
+            return diff <= threshold;
+        }
+
+        // Detect bullish/bearish/potential crosses based on enhanced conditions
+        function detectSignals(symbol) {
+            if (!state.emaData[symbol]) return;
+            
+            const ema9 = state.emaData[symbol].ema9;
+            const ema20 = state.emaData[symbol].ema20;
+            const ema50 = state.emaData[symbol].ema50;
+            
+            if (!ema9 || !ema20 || !ema50) return;
+            
+            // Get previous EMA values for crossover detection
+            const prevEma9 = getPreviousEMA(symbol, 9);
+            const prevEma20 = getPreviousEMA(symbol, 20);
+            
+            // Calculate percentage difference between EMAs
+            const diff9_20 = Math.abs(ema9 - ema20) / ((ema9 + ema20) / 2) * 100;
+            const diff9_50 = Math.abs(ema9 - ema50) / ((ema9 + ema50) / 2) * 100;
+            
+            // Determine signal type and direction
+            let signal = 'none';
+            let direction = 'none';
+            let explanation = '';
+            let strength = 'medium';
+            
+            // Enhanced Buy Conditions
+            if (ema9 > ema20 && ema20 > ema50) {
+                // Strong bullish: EMA 9 > EMA 20 > EMA 50
+                signal = 'strong-bullish';
+                direction = 'up';
+                explanation = 'EMA 9 > EMA 20 > EMA 50 - Strong bullish trend confirmed';
+                strength = 'high';
+            } 
+            else if (ema9 > ema20) {
+                // EMA 9 crosses above EMA 20 (primary buy signal)
+                signal = 'bullish';
+                direction = 'up';
+                explanation = 'EMA 9 crossed above EMA 20';
+                
+                if (ema20 > ema50) {
+                    explanation += ' and EMA 20 > EMA 50 - Trend confirmed';
+                    strength = 'high';
+                } else {
+                    explanation += ' but EMA 20 < EMA 50 - Trend not fully confirmed';
+                    strength = 'medium';
+                }
+            }
+            else if (isEMATouching(ema9, ema50) && ema9 > ema50) {
+                // EMA 9 touching EMA 50 from above
+                signal = 'bullish';
+                direction = 'up';
+                explanation = 'EMA 9 is touching EMA 50 going above - Potential bounce';
+                strength = 'medium';
+            }
+            
+            // Enhanced Sell Conditions
+            else if (ema9 < ema20 && ema20 < ema50) {
+                // Strong bearish: EMA 9 < EMA 20 < EMA 50
+                signal = 'bearish';
+                direction = 'down';
+                explanation = 'EMA 9 < EMA 20 < EMA 50 - Strong bearish trend confirmed';
+                strength = 'high';
+            }
+            else if (ema9 < ema20) {
+                // EMA 9 crosses below EMA 20 (primary sell signal)
+                signal = 'bearish';
+                direction = 'down';
+                explanation = 'EMA 9 crossed below EMA 20';
+                
+                if (ema20 < ema50) {
+                    explanation += ' and EMA 20 < EMA 50 - Trend confirmed';
+                    strength = 'high';
+                } else {
+                    explanation += ' but EMA 20 > EMA 50 - Trend not fully confirmed';
+                    strength = 'medium';
+                }
+            }
+            else if (isEMATouching(ema9, ema50) && ema9 < ema50) {
+                // EMA 9 touching EMA 50 from below
+                signal = 'bearish';
+                direction = 'down';
+                explanation = 'EMA 9 is touching EMA 50 going below - Potential rejection';
+                strength = 'medium';
+            }
+            
+            // Potential Signals
+            else if (diff9_20 < 0.5) {
+                // EMAs are very close - potential crossover
+                signal = 'potential';
+                
+                if (ema9 > ema20) {
+                    direction = 'up';
+                    explanation = 'EMA 9 is very close to crossing above EMA 20';
+                    if (ema20 > ema50) {
+                        explanation += ' - EMA 20 > EMA 50 (bullish bias)';
+                    }
+                } else {
+                    direction = 'down';
+                    explanation = 'EMA 9 is very close to crossing below EMA 20';
+                    if (ema20 < ema50) {
+                        explanation += ' - EMA 20 < EMA 50 (bearish bias)';
+                    }
+                }
+                strength = 'low';
+            }
+            
+            // AI Enhancement: Volume and momentum filters
+            const volume = state.klineData[symbol][state.klineData[symbol].length - 1].volume;
+            const priceChange = calculatePriceChange(state.klineData[symbol]);
+            const rsi = calculateRSI(state.klineData[symbol]);
+            
+            // Apply AI rules to enhance signal accuracy
+            if (signal !== 'none') {
+                // Check volume threshold
+                if (volume < state.minVolume) {
+                    if (signal !== 'potential') {
+                        signal = 'potential';
+                        explanation += ' - Volume below threshold (signal weakened)';
+                    }
+                    strength = 'low';
+                }
+                
+                // Check RSI for overbought/oversold conditions
+                if ((signal === 'bullish' || signal === 'strong-bullish') && rsi > 70) {
+                    explanation += ' - RSI > 70 (overbought, caution advised)';
+                    strength = 'medium';
+                }
+                else if ((signal === 'bearish') && rsi < 30) {
+                    explanation += ' - RSI < 30 (oversold, potential reversal)';
+                    strength = 'medium';
+                }
+                
+                // Check price momentum
+                const price = state.klineData[symbol][state.klineData[symbol].length - 1].close;
+                if (signal === 'bullish' && priceChange < 0) {
+                    explanation += ' - Price momentum weakening';
+                    strength = 'medium';
+                }
+                else if (signal === 'bearish' && priceChange > 0) {
+                    explanation += ' - Price momentum weakening';
+                    strength = 'medium';
+                }
+            }
+            
+            state.signals[symbol] = {
+                type: signal,
+                direction: direction,
+                ema9,
+                ema20,
+                ema50,
+                volume,
+                priceChange,
+                rsi,
+                explanation,
+                strength,
+                lastUpdate: Date.now()
+            };
+        }
+
+        // Get previous EMA value for crossover detection
+        function getPreviousEMA(symbol, period) {
+            if (!state.klineData[symbol] || state.klineData[symbol].length < period + 1) return null;
+            
+            // Use a subset of data excluding the latest candle
+            const previousData = state.klineData[symbol].slice(0, -1);
+            return calculateEMA(previousData, period);
+        }
+
+        // Calculate RSI (Relative Strength Index)
+        function calculateRSI(data, period = 14) {
+            if (data.length < period + 1) return 50;
+            
+            let gains = 0;
+            let losses = 0;
+            
+            // Calculate initial gains and losses
+            for (let i = data.length - period; i < data.length; i++) {
+                const change = data[i].close - data[i-1].close;
+                if (change > 0) {
+                    gains += change;
+                } else {
+                    losses -= change;
+                }
+            }
+            
+            const avgGain = gains / period;
+            const avgLoss = losses / period;
+            
+            if (avgLoss === 0) return 100;
+            
+            const rs = avgGain / avgLoss;
+            return 100 - (100 / (1 + rs));
+        }
+
+        // Calculate price change percentage
+        function calculatePriceChange(data) {
+            if (data.length < 2) return 0;
+            
+            const current = data[data.length - 1].close;
+            const previous = data[data.length - 2].close;
+            
+            return ((current - previous) / previous) * 100;
+        }
+
+        // Update the display with current signals
+        function updateDisplay() {
+            // Reset counts
+            state.strongBullishCount = 0;
+            state.bullishCount = 0;
+            state.bearishCount = 0;
+            state.potentialCount = 0;
+            
+            // Filter symbols based on selected criteria
+            const filteredSymbols = Object.keys(state.signals).filter(symbol => {
+                const signal = state.signals[symbol];
+                const matchesSignalType = state.selectedSignalType === 'all' || 
+                                         signal.type === state.selectedSignalType;
+                const matchesVolume = signal.volume >= state.minVolume;
+                const matchesSearch = symbol.toLowerCase().includes(state.searchTerm.toLowerCase());
+                
+                return matchesSignalType && matchesVolume && matchesSearch;
+            });
+            
+            // Sort symbols: strong bullish first, then bullish, then bearish, then potential
+            filteredSymbols.sort((a, b) => {
+                const order = { 'strong-bullish': 0, bullish: 1, bearish: 2, potential: 3 };
+                return order[state.signals[a].type] - order[state.signals[b].type];
+            });
+            
+            // Update counts
+            for (const symbol of filteredSymbols) {
+                const signalType = state.signals[symbol].type;
+                if (signalType === 'strong-bullish') state.strongBullishCount++;
+                else if (signalType === 'bullish') state.bullishCount++;
+                else if (signalType === 'bearish') state.bearishCount++;
+                else if (signalType === 'potential') state.potentialCount++;
+            }
+            
+            // Update count displays
+            elements.strongBullishCount.textContent = state.strongBullishCount;
+            elements.bullishCount.textContent = state.bullishCount;
+            elements.bearishCount.textContent = state.bearishCount;
+            elements.potentialCount.textContent = state.potentialCount;
+            
+            // Generate cards HTML
+            if (filteredSymbols.length === 0) {
+                elements.cardsContainer.innerHTML = `
+                    <div class="loading">
+                        <i class="fas fa-search"></i>
+                        <p>No signals match your current filters.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let cardsHTML = '';
+            
+            for (const symbol of filteredSymbols) {
+                const signal = state.signals[symbol];
+                const currentPrice = state.klineData[symbol][state.klineData[symbol].length - 1].close;
+                const priceChange = signal.priceChange;
+                
+                // Determine signal text with direction indicator
+                let signalText = '';
+                let signalClass = signal.type;
+                
+                if (signal.type === 'strong-bullish') {
+                    signalText = 'STRONG BUY SIGNAL';
+                    signalClass = 'strong-buy';
+                } else if (signal.type === 'bullish') {
+                    signalText = 'BUY SIGNAL';
+                    signalClass = 'buy';
+                } else if (signal.type === 'bearish') {
+                    signalText = 'SELL SIGNAL';
+                    signalClass = 'sell';
+                } else if (signal.type === 'potential') {
+                    const directionIcon = signal.direction === 'up' ? 
+                        '<i class="fas fa-arrow-up direction-indicator direction-up"></i>' : 
+                        '<i class="fas fa-arrow-down direction-indicator direction-down"></i>';
+                    signalText = `POTENTIAL ${signal.direction.toUpperCase()} ${directionIcon} SIGNAL`;
+                    signalClass = 'potential';
+                }
+                
+                // Determine glow effect based on signal strength
+                const glowClass = signal.type === 'strong-bullish' ? 'glow-blue' : 'glow';
+                
+                cardsHTML += `
+                    <div class="card ${signal.type} ${signal.type !== 'none' ? glowClass : ''}">
+                        <div class="card-header">
+                            <div class="symbol">${symbol}</div>
+                            <div class="price ${priceChange >= 0 ? 'up' : 'down'}">
+                                $${currentPrice.toFixed(4)} 
+                                <span>(${priceChange >= 0 ? '+' : ''}${priceChange.toFixed(2)}%)</span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="ema-values">
+                                <div class="ema-value">
+                                    <span class="ema-label">EMA 9:</span>
+                                    <span>${signal.ema9.toFixed(4)}</span>
+                                </div>
+                                <div class="ema-value">
+                                    <span class="ema-label">EMA 20:</span>
+                                    <span>${signal.ema20.toFixed(4)}</span>
+                                </div>
+                                <div class="ema-value">
+                                    <span class="ema-label">EMA 50:</span>
+                                    <span>${signal.ema50.toFixed(4)}</span>
+                                </div>
+                            </div>
+                            <div class="signal ${signal.type}">
+                                ${signalText}
+                            </div>
+                            <div class="signal-explanation">
+                                ${signal.explanation}
+                            </div>
+                        </div>
+                        <div class="card-footer">
+                            <div class="volume">
+                                <i class="fas fa-chart-bar"></i> 
+                                Volume: ${(signal.volume / 1000).toFixed(0)}K
+                            </div>
+                            <div class="timeframe">${state.selectedTimeframe} | RSI: ${signal.rsi.toFixed(1)}</div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            elements.cardsContainer.innerHTML = cardsHTML;
+        }
+
+        // Initialize WebSocket connection
+        function initWebSocket() {
+            try {
+                state.ws = new WebSocket(config.binanceWebSocket);
+                
+                state.ws.onopen = () => {
+                    console.log('WebSocket connected');
+                    state.connectionStatus = 'connected';
+                    updateConnectionStatus();
+                    
+                    // Subscribe to kline streams for all symbols
+                    const streams = state.symbols.map(symbol => 
+                        `${symbol.toLowerCase()}@kline_${state.selectedTimeframe}`
+                    );
+                    
+                    // Subscribe in batches (Binance limit: 200 streams per request)
+                    const batchSize = 200;
+                    for (let i = 0; i < streams.length; i += batchSize) {
+                        const batch = streams.slice(i, i + batchSize);
+                        state.ws.send(JSON.stringify({
+                            method: 'SUBSCRIBE',
+                            params: batch,
+                            id: i + 1
+                        }));
+                    }
+                };
+                
+                state.ws.onmessage = (event) => {
+                    const data = JSON.parse(event.data);
+                    
+                    if (data.e === 'kline') {
+                        // Update kline data
+                        const symbol = data.s;
+                        const kline = data.k;
+                        
+                        if (state.klineData[symbol]) {
+                            // Update the latest candle
+                            const newCandle = {
+                                time: kline.t,
+                                open: parseFloat(kline.o),
+                                high: parseFloat(kline.h),
+                                low: parseFloat(kline.l),
+                                close: parseFloat(kline.c),
+                                volume: parseFloat(kline.v)
+                            };
+                            
+                            // Check if this is a new candle or an update to the current one
+                            const lastCandle = state.klineData[symbol][state.klineData[symbol].length - 1];
+                            
+                            if (kline.x) {
+                                // Candle is closed, add new one and remove oldest
+                                state.klineData[symbol].push(newCandle);
+                                if (state.klineData[symbol].length > 100) {
+                                    state.klineData[symbol].shift();
+                                }
+                            } else {
+                                // Candle is still open, update the last one
+                                state.klineData[symbol][state.klineData[symbol].length - 1] = newCandle;
+                            }
+                            
+                            // Recalculate EMAs and signals
+                            calculateAllEMAs();
+                            
+                            // Update display if this symbol is currently visible
+                            if (state.signals[symbol]) {
+                                updateDisplay();
+                            }
+                        }
+                    }
+                };
+                
+                state.ws.onclose = () => {
+                    console.log('WebSocket disconnected');
+                    state.connectionStatus = 'disconnected';
+                    updateConnectionStatus();
+                    
+                    // Attempt to reconnect
+                    setTimeout(initWebSocket, config.reconnectInterval);
+                };
+                
+                state.ws.onerror = (error) => {
+                    console.error('WebSocket error:', error);
+                    state.connectionStatus = 'disconnected';
+                    updateConnectionStatus();
+                };
+                
+            } catch (error) {
+                console.error('Error initializing WebSocket:', error);
+                state.connectionStatus = 'disconnected';
+                updateConnectionStatus();
+                
+                // Attempt to reconnect
+                setTimeout(initWebSocket, config.reconnectInterval);
+            }
+        }
+
+        // Update connection status display
+        function updateConnectionStatus() {
+            const statusEl = elements.connectionStatus;
+            const textEl = elements.connectionText;
+            
+            statusEl.className = 'status-indicator ' + state.connectionStatus;
+            
+            switch (state.connectionStatus) {
+                case 'connected':
+                    textEl.textContent = 'Connected to Binance';
+                    break;
+                case 'connecting':
+                    textEl.textContent = 'Connecting to Binance...';
+                    break;
+                case 'disconnected':
+                    textEl.textContent = 'Disconnected - Reconnecting...';
+                    break;
+            }
+        }
+
+        // Set up event listeners
+        function setupEventListeners() {
+            // Timeframe change
+            elements.timeframe.addEventListener('change', (e) => {
+                state.selectedTimeframe = e.target.value;
+                // Restart the data refresh timer with new timeframe
+                startDataRefreshTimer();
+                fetchHistoricalData();
+            });
+            
+            // Signal type filter
+            elements.signalType.addEventListener('change', (e) => {
+                state.selectedSignalType = e.target.value;
+                updateDisplay();
+            });
+            
+            // Minimum volume filter
+            elements.minVolume.addEventListener('change', (e) => {
+                state.minVolume = parseInt(e.target.value) || 0;
+                updateDisplay();
+            });
+            
+            // Search filter
+            elements.search.addEventListener('input', (e) => {
+                state.searchTerm = e.target.value;
+                updateDisplay();
+            });
+            
+            // Refresh button
+            elements.refresh.addEventListener('click', () => {
+                refreshAllData();
+            });
+        }
+
+        // Start the application when the page loads
+        window.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
