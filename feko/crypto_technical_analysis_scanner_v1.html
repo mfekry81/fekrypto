@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Crypto Technical Analysis Scanner</title>
+    <title>Crypto Technical Analysis Scanner v1</title>
     <style>
         * {
             margin: 0;
@@ -445,7 +445,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>Crypto Technical Analysis Scanner</h1>
+            <h1>Crypto Technical Analysis Scanner v1</h1>
             <div class="last-update">
                 <span>⏰</span>
                 <span id="lastUpdate">Loading...</span>
@@ -740,9 +740,9 @@
             if (analysis.rsi < 40 && analysis.rsi >= 30) bullishSignals += 1;
             if (analysis.rsi > 60 && analysis.rsi <= 70) bearishSignals += 1;
             
-            // EMA signals
-            if (analysis.emaCross === 'Bullish') bullishSignals += 2;
-            if (analysis.emaCross === 'Bearish') bearishSignals += 2;
+            // EMA signals (Supertrend equivalent)
+            if (analysis.emaCross === 'Bullish') bullishSignals += 3;
+            if (analysis.emaCross === 'Bearish') bearishSignals += 3;
             
             // Trend signals
             if (analysis.trend === 'Up') bullishSignals += 1;
@@ -758,25 +758,38 @@
                 else bearishSignals += 1;
             }
             
-            if (bullishSignals > bearishSignals && bullishSignals >= 3) {
+            // Determine direction based on EMA cross (primary signal like Supertrend)
+            if (analysis.emaCross === 'Bullish' && bullishSignals >= 4) {
                 direction = 'LONG';
                 confidence = Math.min(Math.round((bullishSignals / 9) * 100), 85);
                 
+                // Pine Script logic: Entry at close, SL = close - (ATR × 3)
                 entry = price;
                 stopLoss = price - (atr * 3);
-                takeProfit1 = price + (atr * 1);
-                takeProfit2 = price + (atr * 2);
-                takeProfit3 = price + (atr * 3);
                 
-            } else if (bearishSignals > bullishSignals && bearishSignals >= 3) {
+                // Calculate distance for R:R ratios
+                const riskDistance = entry - stopLoss;
+                
+                // TP levels based on R:R - Pine Script uses 1:1, 2:1, 3:1
+                takeProfit1 = entry + (riskDistance * 1); // 1:1 R/R
+                takeProfit2 = entry + (riskDistance * 2); // 2:1 R/R
+                takeProfit3 = entry + (riskDistance * 3); // 3:1 R/R
+                
+            } else if (analysis.emaCross === 'Bearish' && bearishSignals >= 4) {
                 direction = 'SHORT';
                 confidence = Math.min(Math.round((bearishSignals / 9) * 100), 85);
                 
+                // Pine Script logic: Entry at close, SL = close + (ATR × 3)
                 entry = price;
                 stopLoss = price + (atr * 3);
-                takeProfit1 = price - (atr * 1);
-                takeProfit2 = price - (atr * 2);
-                takeProfit3 = price - (atr * 3);
+                
+                // Calculate distance for R:R ratios
+                const riskDistance = stopLoss - entry;
+                
+                // TP levels based on R:R - Pine Script uses 1:1, 2:1, 3:1
+                takeProfit1 = entry - (riskDistance * 1); // 1:1 R/R
+                takeProfit2 = entry - (riskDistance * 2); // 2:1 R/R
+                takeProfit3 = entry - (riskDistance * 3); // 3:1 R/R
             }
             
             if (timeframe === '1m' && confidence > 0) confidence = Math.max(confidence - 10, 40);
@@ -790,9 +803,10 @@
                 takeProfit1,
                 takeProfit2,
                 takeProfit3,
-                riskReward1: direction ? Math.abs((takeProfit1 - entry) / (entry - stopLoss)).toFixed(2) : 0,
-                riskReward2: direction ? Math.abs((takeProfit2 - entry) / (entry - stopLoss)).toFixed(2) : 0,
-                riskReward3: direction ? Math.abs((takeProfit3 - entry) / (entry - stopLoss)).toFixed(2) : 0,
+                riskReward1: '1.00',
+                riskReward2: '2.00',
+                riskReward3: '3.00',
+                atr: atr
             };
         }
 
