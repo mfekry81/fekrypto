@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Crypto Technical Analysis Scanner v1</title>
+    <title>Crypto Technical Analysis Scanner v2</title>
     <style>
         * {
             margin: 0;
@@ -42,7 +42,7 @@
 
         .grid {
             display: grid;
-            grid-template-columns: 400px 1fr;
+            grid-template-columns: 550px 1fr;
             gap: 24px;
         }
 
@@ -67,21 +67,34 @@
         .coin-list {
             max-height: 800px;
             overflow-y: auto;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        @media (max-width: 520px) {
+            .coin-list {
+                grid-template-columns: repeat(2, 1fr);
+            }
         }
 
         .coin-item {
             background: rgba(51, 65, 85, 0.6);
-            padding: 16px;
-            margin-bottom: 12px;
+            padding: 12px;
             border-radius: 8px;
             cursor: pointer;
             transition: all 0.3s ease;
             border: 2px solid transparent;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
         }
 
         .coin-item:hover {
             background: rgba(71, 85, 105, 0.8);
             border-color: #3b82f6;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
         }
 
         .coin-item.selected {
@@ -89,32 +102,38 @@
             background: rgba(59, 130, 246, 0.2);
         }
 
+        .coin-rank {
+            font-size: 12px;
+            font-weight: bold;
+            color: #64748b;
+            margin-bottom: 4px;
+        }
+
         .coin-header {
             display: flex;
             justify-content: space-between;
-            align-items: center;
+            align-items: flex-start;
+            gap: 8px;
         }
 
         .coin-left {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .coin-rank {
-            font-size: 24px;
-            font-weight: bold;
-            color: #64748b;
+            flex: 1;
+            min-width: 0;
         }
 
         .coin-symbol {
             font-weight: bold;
-            font-size: 18px;
+            font-size: 14px;
+            margin-bottom: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .coin-price {
-            font-size: 14px;
+            font-size: 12px;
             color: #94a3b8;
+            font-weight: 600;
         }
 
         .coin-right {
@@ -123,11 +142,12 @@
 
         .coin-change {
             font-weight: bold;
-            font-size: 18px;
+            font-size: 14px;
             display: flex;
             align-items: center;
             gap: 4px;
             justify-content: flex-end;
+            margin-bottom: 2px;
         }
 
         .coin-change.positive {
@@ -139,14 +159,14 @@
         }
 
         .coin-volume {
-            font-size: 14px;
+            font-size: 10px;
             color: #94a3b8;
-            margin-top: 4px;
         }
 
         .coin-footer {
-            margin-top: 12px;
-            font-size: 12px;
+            padding-top: 8px;
+            border-top: 1px solid rgba(148, 163, 184, 0.2);
+            font-size: 10px;
             color: #94a3b8;
         }
 
@@ -155,6 +175,7 @@
             padding: 60px 20px;
             color: #94a3b8;
             font-size: 18px;
+            grid-column: 1 / -1;
         }
 
         .spinner {
@@ -445,7 +466,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>Crypto Technical Analysis Scanner v1</h1>
+            <h1>Crypto Technical Analysis Scanner v2</h1>
             <div class="last-update">
                 <span>⏰</span>
                 <span id="lastUpdate">Loading...</span>
@@ -548,27 +569,25 @@
         function renderCoinList() {
             const listElement = document.getElementById('coinList');
             
-            listElement.innerHTML = coins.slice(0, 10).map((coin, idx) => `
+            listElement.innerHTML = coins.slice(0, 20).map((coin, idx) => `
                 <div class="coin-item ${selectedCoin === coin.symbol ? 'selected' : ''}" 
                      onclick="fetchDetailedAnalysis('${coin.symbol}')">
+                    <div class="coin-rank">#${idx + 1}</div>
                     <div class="coin-header">
                         <div class="coin-left">
-                            <div class="coin-rank">#${idx + 1}</div>
-                            <div>
-                                <div class="coin-symbol">${coin.symbol}</div>
-                                <div class="coin-price">${formatPrice(coin.price)}</div>
-                            </div>
+                            <div class="coin-symbol">${coin.symbol}</div>
+                            <div class="coin-price">${formatPriceCurrency(coin.price)}</div>
                         </div>
                         <div class="coin-right">
                             <div class="coin-change ${coin.change >= 0 ? 'positive' : 'negative'}">
                                 ${coin.change >= 0 ? '▲' : '▼'}
                                 ${Math.abs(coin.change).toFixed(2)}%
                             </div>
-                            <div class="coin-volume">Vol: $${(coin.quoteVolume / 1000000).toFixed(2)}M</div>
+                            <div class="coin-volume">$${(coin.quoteVolume / 1000000).toFixed(1)}M</div>
                         </div>
                     </div>
                     <div class="coin-footer">
-                        Score: ${coin.score} | Range: ${(((coin.high - coin.low) / coin.low) * 100).toFixed(2)}%
+                        Score: ${coin.score}
                     </div>
                 </div>
             `).join('');
@@ -588,6 +607,30 @@
             if (price >= 0.01) return price.toFixed(6);
             if (price >= 0.0001) return price.toFixed(6);
             return price.toFixed(8);
+        }
+
+        function formatPriceCurrency(price) {
+            if (!price || isNaN(price)) return '$0.00';
+            
+            if (price >= 1000) {
+                return '$' + price.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+            }
+            if (price >= 100) {
+                return '$' + price.toFixed(3);
+            }
+            if (price >= 10) {
+                return '$' + price.toFixed(4);
+            }
+            if (price >= 1) {
+                return '$' + price.toFixed(4);
+            }
+            if (price >= 0.01) {
+                return '$' + price.toFixed(6);
+            }
+            if (price >= 0.0001) {
+                return '$' + price.toFixed(6);
+            }
+            return '$' + price.toFixed(8);
         }
 
         async function fetchDetailedAnalysis(symbol) {

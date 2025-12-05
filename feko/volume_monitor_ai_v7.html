@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Volume Monitor v7 - TradingView Accurate</title>
+
+  <!-- Bulma CSS -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.6.2/css/bulma.min.css">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+
+  <style>
+    body { background: #f9f9f9; }
+    .navbar { margin-bottom: 2rem; }
+    .title { font-size: 2rem; }
+    .box { margin-bottom: 1rem; }
+    table th, table td { text-align: center; vertical-align: middle; font-size: 12px; }
+    .is-strong-buy { background-color: #a8e6a8; font-weight: bold; }
+    .is-buy { background-color: #d4f8d4; }
+    .is-sell { background-color: #ffd4d4; }
+    .is-strong-sell { background-color: #ffb3b3; font-weight: bold; }
+    .is-up { color: #23d160; }
+    .is-down { color: #ff3860; }
+    .pressure-indicator {
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-weight: bold;
+      display: inline-block;
+      font-size: 10px;
+    }
+    .pressure-buying { background-color: #48c774; color: white; }
+    .pressure-selling { background-color: #f14668; color: white; }
+    .pressure-neutral { background-color: #ffdd57; color: #333; }
+    .confidence-meter {
+      width: 100%;
+      height: 6px;
+      background: #e0e0e0;
+      border-radius: 3px;
+      overflow: hidden;
+      margin-top: 2px;
+    }
+    .confidence-fill {
+      height: 100%;
+      transition: width 0.3s ease;
+    }
+    .confidence-high { background: #48c774; }
+    .confidence-medium { background: #ffdd57; }
+    .confidence-low { background: #f14668; }
+    .algorithm-badge {
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 3px;
+      background: #3273dc;
+      color: white;
+      margin-left: 5px;
+    }
+    .net-flow-positive { color: #48c774; font-weight: bold; }
+    .net-flow-negative { color: #f14668; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <section class="section">
+    <div class="container">
+      <p>
+        <span style="font-size:28px;"><strong>Binance Market Watch v7</strong></span>
+        <span class="algorithm-badge">TRADINGVIEW ACCURATE</span><br>
+        <span style="font-size:11px; color: #666;">TradingView-Compatible RSI + Volume Delta + Momentum + Order Flow + Exchange Net Flow</span>
+      </p>
+
+      <!-- Selected Coin Data Section -->
+      <div class="box">
+        <label class="label">Select Coin</label>
+        <div class="select">
+          <select id="coinSelector">
+            <option value="BTCUSDT">BTC/USDT</option>
+            <option value="ETHUSDT">ETH/USDT</option>
+            <option value="BNBUSDT">BNB/USDT</option>
+            <option value="XRPUSDT">XRP/USDT</option>
+            <option value="AVAXUSDT">AVAX/USDT</option>
+            <option value="SOLUSDT">SOL/USDT</option>
+            <option value="LINKUSDT">LINK/USDT</option>
+            <option value="SUIUSDT">SUI/USDT</option>
+            <option value="SEIUSDT">SEI/USDT</option>
+            <option value="YGGUSDT">YGG/USDT</option>
+            <option value="GALAUSDT">GALA/USDT</option>
+            <option value="SKLUSDT">SKL/USDT</option>
+            <option value="KAVAUSDT">KAVA/USDT</option>
+            <option value="HBARUSDT">HBAR/USDT</option>
+            <option value="APTUSDT">APT/USDT</option>
+            <option value="INJUSDT">INJ/USDT</option>
+            <option value="WLDUSDT">WLD/USDT</option>
+            <option value="ARBUSDT">ARB/USDT</option>
+            <option value="ONDOUSDT">ONDO/USDT</option>
+            <option value="TIAUSDT">TIA/USDT</option>
+            <option value="ORDIUSDT">ORDI/USDT</option>
+          </select>
+        </div>
+        <button class="button is-info" id="loadData">Load Data</button>
+        <button class="button is-warning" id="clearData">Clear History</button>
+      </div>
+
+      <div class="card">
+        <div class="card-content">
+          <h3 class="title is-5">Advanced Real-Time Analysis</h3>
+          <table class="table is-bordered is-fullwidth" id="coinTable">
+            <thead>
+              <tr>
+                <th>Coin</th>
+                <th>Price</th>
+                <th>24h %</th>
+                <th>RSI(14)</th>
+                <th>Vol Delta</th>
+                <th>Momentum</th>
+                <th>Order Flow</th>
+                <th>Net Flow</th>
+                <th>Pressure</th>
+                <th>Confidence</th>
+                <th>AI Signal</th>
+                <th>Time</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- jQuery -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+
+  <script>
+    // Store historical data for each coin
+    const historicalData = {};
+
+    // Format number as currency
+    function formatCurrency(num) {
+      return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    // Get local time
+    function getLocalTime() {
+      const now = new Date();
+      return now.toLocaleString('en-US', { 
+        month: '2-digit', 
+        day: '2-digit', 
+        hour: '2-digit', 
+        minute: '2-digit', 
+        second: '2-digit',
+        hour12: false 
+      });
+    }
+
+    // Calculate EMA (Exponential Moving Average)
+    function calculateEMA(data, period) {
+      const k = 2 / (period + 1);
+      let ema = data[0];
+      
+      for (let i = 1; i < data.length; i++) {
+        ema = (data[i] * k) + (ema * (1 - k));
+      }
+      
+      return ema;
+    }
+
+    // Calculate RSI using RMA (same as TradingView/Binance)
+    // This uses exponential moving average which matches TradingView
+    function calculateRSI_TradingView(candles, period = 14) {
+      if (candles.length < period + 1) return 50;
+      
+      const changes = [];
+      for (let i = 1; i < candles.length; i++) {
+        const prevClose = parseFloat(candles[i - 1][4]);
+        const currClose = parseFloat(candles[i][4]);
+        changes.push(currClose - prevClose);
+      }
+      
+      if (changes.length < period) return 50;
+      
+      const gains = changes.map(c => c > 0 ? c : 0);
+      const losses = changes.map(c => c < 0 ? Math.abs(c) : 0);
+      
+      // Use RMA (Running Moving Average) - same as TradingView
+      // First average is SMA
+      let avgGain = gains.slice(0, period).reduce((a, b) => a + b, 0) / period;
+      let avgLoss = losses.slice(0, period).reduce((a, b) => a + b, 0) / period;
+      
+      // Then use RMA (alpha = 1/period)
+      const alpha = 1 / period;
+      for (let i = period; i < changes.length; i++) {
+        avgGain = (gains[i] * alpha) + (avgGain * (1 - alpha));
+        avgLoss = (losses[i] * alpha) + (avgLoss * (1 - alpha));
+      }
+      
+      if (avgLoss === 0) return 100;
+      const rs = avgGain / avgLoss;
+      const rsi = 100 - (100 / (1 + rs));
+      
+      return rsi;
+    }
+
+    // Calculate Volume Delta using actual trade direction
+    function calculateVolumeDelta(candles) {
+      let buyVolume = 0;
+      let sellVolume = 0;
+      
+      candles.forEach(candle => {
+        const open = parseFloat(candle[1]);
+        const close = parseFloat(candle[4]);
+        const high = parseFloat(candle[2]);
+        const low = parseFloat(candle[3]);
+        const volume = parseFloat(candle[5]);
+        const takerBuyVolume = parseFloat(candle[9]); // Taker buy base asset volume
+        
+        // Use taker buy volume (more accurate)
+        buyVolume += takerBuyVolume;
+        sellVolume += (volume - takerBuyVolume);
+      });
+      
+      const totalVolume = buyVolume + sellVolume;
+      const delta = totalVolume > 0 ? ((buyVolume - sellVolume) / totalVolume) * 100 : 0;
+      
+      return { delta, buyVolume, sellVolume };
+    }
+
+    // Calculate Momentum using ROC (Rate of Change)
+    function calculateMomentum(candles, period = 10) {
+      if (candles.length < period + 1) return 0;
+      
+      const closes = candles.map(c => parseFloat(c[4]));
+      const currentPrice = closes[closes.length - 1];
+      const pastPrice = closes[closes.length - period - 1];
+      
+      return ((currentPrice - pastPrice) / pastPrice) * 100;
+    }
+
+    // Calculate Order Flow with price action context
+    function calculateOrderFlow(candles) {
+      let cumulativeFlow = 0;
+      
+      candles.forEach((candle) => {
+        const open = parseFloat(candle[1]);
+        const high = parseFloat(candle[2]);
+        const low = parseFloat(candle[3]);
+        const close = parseFloat(candle[4]);
+        const volume = parseFloat(candle[5]);
+        
+        const range = high - low;
+        if (range > 0) {
+          // Calculate buying pressure based on close position
+          const buyingPressure = (close - low) / range;
+          const sellingPressure = (high - close) / range;
+          
+          // Weight by volume
+          cumulativeFlow += (buyingPressure - sellingPressure) * volume;
+        }
+      });
+      
+      return cumulativeFlow;
+    }
+
+    // Calculate Exchange Net Flow (inflows - outflows proxy)
+    function calculateExchangeNetFlow(candles, volumeDelta) {
+      // Use recent volume patterns as proxy for exchange flows
+      let netFlow = 0;
+      const recentCandles = candles.slice(-5); // Last 5 candles
+      
+      recentCandles.forEach(candle => {
+        const open = parseFloat(candle[1]);
+        const close = parseFloat(candle[4]);
+        const volume = parseFloat(candle[5]);
+        const priceChange = ((close - open) / open) * 100;
+        
+        // Positive price + high volume = likely inflow (buying pressure)
+        // Negative price + high volume = likely outflow (selling pressure)
+        if (priceChange > 0) {
+          netFlow += volume * priceChange * 0.01;
+        } else {
+          netFlow += volume * priceChange * 0.01;
+        }
+      });
+      
+      // Normalize and adjust based on volume delta
+      netFlow = (netFlow / 1000000) * (1 + volumeDelta / 100);
+      
+      return netFlow;
+    }
+
+    // HYBRID AI ALGORITHM - Enhanced Multi-Factor Analysis
+    function hybridAIAnalysis(rsi, volumeDelta, momentum, orderFlow, netFlow, priceChange) {
+      let score = 0;
+      let factors = [];
+      
+      // Factor 1: RSI Analysis (25% weight)
+      if (rsi < 30) {
+        score += 25;
+        factors.push("RSI Oversold");
+      } else if (rsi > 70) {
+        score -= 25;
+        factors.push("RSI Overbought");
+      } else if (rsi >= 45 && rsi <= 55) {
+        score += 3;
+      }
+      
+      // Factor 2: Volume Delta (30% weight)
+      if (volumeDelta > 25) {
+        score += 30;
+        factors.push("Strong Buy Vol");
+      } else if (volumeDelta > 10) {
+        score += 18;
+        factors.push("Buy Vol");
+      } else if (volumeDelta < -25) {
+        score -= 30;
+        factors.push("Strong Sell Vol");
+      } else if (volumeDelta < -10) {
+        score -= 18;
+        factors.push("Sell Vol");
+      }
+      
+      // Factor 3: Momentum (20% weight)
+      if (momentum > 3) {
+        score += 20;
+        factors.push("Strong Mom↑");
+      } else if (momentum > 1) {
+        score += 12;
+        factors.push("Mom↑");
+      } else if (momentum < -3) {
+        score -= 20;
+        factors.push("Strong Mom↓");
+      } else if (momentum < -1) {
+        score -= 12;
+        factors.push("Mom↓");
+      }
+      
+      // Factor 4: Order Flow (15% weight)
+      const orderFlowNorm = orderFlow / 1000000;
+      if (orderFlowNorm > 8) {
+        score += 15;
+        factors.push("Order Flow+");
+      } else if (orderFlowNorm < -8) {
+        score -= 15;
+        factors.push("Order Flow-");
+      }
+      
+      // Factor 5: Exchange Net Flow (10% weight)
+      if (netFlow > 5) {
+        score += 10;
+        factors.push("Net Inflow+");
+      } else if (netFlow < -5) {
+        score -= 10;
+        factors.push("Net Outflow-");
+      }
+      
+      // Confirmation multiplier
+      if (priceChange > 2 && score > 0) {
+        score *= 1.15;
+      } else if (priceChange < -2 && score < 0) {
+        score *= 1.15;
+      }
+      
+      const confidence = Math.min(100, Math.abs(score));
+      
+      let signal, css, direction;
+      if (score > 60) {
+        signal = "STRONG BUY 🚀";
+        css = "is-strong-buy";
+        direction = "BULLISH";
+      } else if (score > 30) {
+        signal = "BUY ⬆";
+        css = "is-buy";
+        direction = "BULLISH";
+      } else if (score < -60) {
+        signal = "STRONG SELL ⚠";
+        css = "is-strong-sell";
+        direction = "BEARISH";
+      } else if (score < -30) {
+        signal = "SELL ⬇";
+        css = "is-sell";
+        direction = "BEARISH";
+      } else {
+        signal = "HOLD ⸱";
+        css = "";
+        direction = "NEUTRAL";
+      }
+      
+      return { signal, css, confidence, score, factors, direction };
+    }
+
+    // Fetch candle data
+    async function fetchCandleData(coin, interval = '15m', limit = 100) {
+      return new Promise((resolve, reject) => {
+        const url = `https://api.binance.com/api/v3/klines?symbol=${coin}&interval=${interval}&limit=${limit}`;
+        
+        $.getJSON(url, function(data) {
+          resolve(data);
+        }).fail(function() {
+          resolve([]);
+        });
+      });
+    }
+
+    // Fetch and analyze data
+    async function fetchSelectedCoinData(coin) {
+      try {
+        // Fetch 15-minute candles for balanced accuracy
+        const candles = await fetchCandleData(coin, '15m', 100);
+        
+        if (candles.length === 0) {
+          console.error("No candle data available");
+          return;
+        }
+        
+        // Calculate all indicators
+        const rsi = calculateRSI_TradingView(candles, 14);
+        const volumeDeltaData = calculateVolumeDelta(candles.slice(-20));
+        const momentum = calculateMomentum(candles, 10);
+        const orderFlow = calculateOrderFlow(candles.slice(-20));
+        const netFlow = calculateExchangeNetFlow(candles, volumeDeltaData.delta);
+        
+        // Fetch 24h ticker
+        const tickerUrl = `https://api.binance.com/api/v3/ticker/24hr?symbol=${coin}`;
+        
+        $.getJSON(tickerUrl, function(data) {
+          const realTimePrice = parseFloat(data.lastPrice).toFixed(2);
+          const priceChange = parseFloat(data.priceChangePercent);
+          
+          // Run analysis
+          const analysis = hybridAIAnalysis(
+            rsi,
+            volumeDeltaData.delta,
+            momentum,
+            orderFlow,
+            netFlow,
+            priceChange
+          );
+          
+          // Determine colors
+          let confidenceClass = 'confidence-low';
+          if (analysis.confidence > 70) confidenceClass = 'confidence-high';
+          else if (analysis.confidence > 40) confidenceClass = 'confidence-medium';
+          
+          const priceChangeClass = priceChange >= 0 ? 'is-up' : 'is-down';
+          const rsiColor = rsi < 30 ? 'is-up' : rsi > 70 ? 'is-down' : '';
+          const volumeDeltaColor = volumeDeltaData.delta > 10 ? 'is-up' : volumeDeltaData.delta < -10 ? 'is-down' : '';
+          const momentumColor = momentum > 1 ? 'is-up' : momentum < -1 ? 'is-down' : '';
+          const netFlowClass = netFlow > 0 ? 'net-flow-positive' : 'net-flow-negative';
+          
+          const localTime = getLocalTime();
+          
+          const row = `
+            <tr class="${analysis.css}">
+              <td><strong>${coin}</strong></td>
+              <td>$${realTimePrice}</td>
+              <td class="${priceChangeClass}"><strong>${priceChange.toFixed(2)}%</strong></td>
+              <td class="${rsiColor}"><strong>${rsi.toFixed(1)}</strong></td>
+              <td class="${volumeDeltaColor}"><strong>${volumeDeltaData.delta.toFixed(1)}%</strong></td>
+              <td class="${momentumColor}"><strong>${momentum.toFixed(2)}%</strong></td>
+              <td><strong>${(orderFlow / 1000000).toFixed(2)}M</strong></td>
+              <td class="${netFlowClass}"><strong>${netFlow > 0 ? '+' : ''}${netFlow.toFixed(1)}M</strong></td>
+              <td>
+                <span class="pressure-indicator ${analysis.direction === 'BULLISH' ? 'pressure-buying' : analysis.direction === 'BEARISH' ? 'pressure-selling' : 'pressure-neutral'}">
+                  ${analysis.direction}
+                </span>
+              </td>
+              <td>
+                <strong>${analysis.confidence.toFixed(0)}%</strong>
+                <div class="confidence-meter">
+                  <div class="confidence-fill ${confidenceClass}" style="width: ${analysis.confidence}%"></div>
+                </div>
+              </td>
+              <td><strong>${analysis.signal}</strong></td>
+              <td style="font-size: 10px;">${localTime}</td>
+            </tr>
+          `;
+
+          $("#coinTable tbody").prepend(row);
+          if ($("#coinTable tbody tr").length > 20) {
+            $("#coinTable tbody tr:last").remove();
+          }
+        }).fail(function() {
+          console.error("Failed to fetch ticker data for " + coin);
+        });
+        
+      } catch (error) {
+        console.error("Error in analysis:", error);
+      }
+    }
+
+    $(document).ready(function() {
+      $('#loadData').click(function(){
+        const coin = $('#coinSelector').val();
+        fetchSelectedCoinData(coin);
+      });
+
+      $('#clearData').click(function(){
+        $("#coinTable tbody").empty();
+      });
+
+      setInterval(function(){
+        const coin = $('#coinSelector').val();
+        if ($("#coinTable tbody tr").length > 0) {
+          fetchSelectedCoinData(coin);
+        }
+      }, 30000);
+    });
+  </script>
+</body>
+</html>
