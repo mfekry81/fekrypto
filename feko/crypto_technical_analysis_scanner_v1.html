@@ -569,7 +569,7 @@
         function renderCoinList() {
             const listElement = document.getElementById('coinList');
             
-            listElement.innerHTML = coins.slice(0, 20).map((coin, idx) => `
+            listElement.innerHTML = coins.slice(0, 30).map((coin, idx) => `
                 <div class="coin-item ${selectedCoin === coin.symbol ? 'selected' : ''}" 
                      onclick="fetchDetailedAnalysis('${coin.symbol}')">
                     <div class="coin-rank">#${idx + 1}</div>
