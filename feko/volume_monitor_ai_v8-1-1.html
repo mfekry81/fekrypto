@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Volume Monitor v8-1-1 - Ultra Responsive</title>
+
+  <!-- Bulma CSS -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.6.2/css/bulma.min.css">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    body { background: #f9f9f9; }
+    .navbar { margin-bottom: 2rem; }
+    .title { font-size: 2rem; }
+    .box { margin-bottom: 1rem; }
+    table th, table td { text-align: center; vertical-align: middle; font-size: 12px; }
+    .is-strong-buy { background-color: #a8e6a8; font-weight: bold; }
+    .is-buy { background-color: #d4f8d4; }
+    .is-sell { background-color: #ffd4d4; }
+    .is-strong-sell { background-color: #ffb3b3; font-weight: bold; }
+    .is-up { color: #23d160; }
+    .is-down { color: #ff3860; }
+    .pressure-indicator {
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-weight: bold;
+      display: inline-block;
+      font-size: 10px;
+    }
+    .pressure-buying { background-color: #48c774; color: white; }
+    .pressure-selling { background-color: #f14668; color: white; }
+    .pressure-neutral { background-color: #ffdd57; color: #333; }
+    .confidence-meter {
+      width: 100%;
+      height: 6px;
+      background: #e0e0e0;
+      border-radius: 3px;
+      overflow: hidden;
+      margin-top: 2px;
+    }
+    .confidence-fill {
+      height: 100%;
+      transition: width 0.3s ease;
+    }
+    .confidence-high { background: #48c774; }
+    .confidence-medium { background: #ffdd57; }
+    .confidence-low { background: #f14668; }
+    .algorithm-badge {
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 3px;
+      background: #3273dc;
+      color: white;
+      margin-left: 5px;
+    }
+    .net-flow-positive { color: #48c774; font-weight: bold; }
+    .net-flow-negative { color: #f14668; font-weight: bold; }
+    #vpTotals { 
+      font-size: 12px; 
+      margin-bottom: 10px; 
+      text-align: left; 
+    }
+    #vpChartContainer {
+      display: flex;
+      align-items: center;
+    }
+    #vpChart {
+      flex: 1;
+    }
+  </style>
+</head>
+<body>
+  <section class="section">
+    <div class="container">
+      <p>
+        <span style="font-size:28px;"><strong>Binance Market Watch v8-1-1</strong></span>
+        <span class="algorithm-badge">ULTRA RESPONSIVE + VOLUME PROFILE</span><br>
+        <span style="font-size:11px; color: #666;">3s Refresh | Real-Time RSI + Volume Delta + Momentum + Order Flow + Net Flow + Enhanced AI Signals</span>
+      </p>
+
+      <!-- Selected Coin Data Section -->
+      <div class="box">
+        <label class="label">Select Coin</label>
+        <div class="select">
+          <select id="coinSelector">
+            <option value="BTCUSDT">BTC/USDT</option>
+            <option value="ETHUSDT">ETH/USDT</option>
+            <option value="BNBUSDT">BNB/USDT</option>
+            <option value="XRPUSDT">XRP/USDT</option>
+            <option value="AVAXUSDT">AVAX/USDT</option>
+            <option value="SOLUSDT">SOL/USDT</option>
+            <option value="LINKUSDT">LINK/USDT</option>
+            <option value="SUIUSDT">SUI/USDT</option>
+            <option value="SEIUSDT">SEI/USDT</option>
+            <option value="YGGUSDT">YGG/USDT</option>
+            <option value="GALAUSDT">GALA/USDT</option>
+            <option value="SKLUSDT">SKL/USDT</option>
+            <option value="KAVAUSDT">KAVA/USDT</option>
+            <option value="HBARUSDT">HBAR/USDT</option>
+            <option value="APTUSDT">APT/USDT</option>
+            <option value="INJUSDT">INJ/USDT</option>
+            <option value="WLDUSDT">WLD/USDT</option>
+            <option value="ARBUSDT">ARB/USDT</option>
+            <option value="ONDOUSDT">ONDO/USDT</option>
+            <option value="TIAUSDT">TIA/USDT</option>
+            <option value="ORDIUSDT">ORDI/USDT</option>
+          </select>
+        </div>
+        <button class="button is-info" id="loadData">Load Data</button>
+        <button class="button is-warning" id="clearData">Clear History</button>
+      </div>
+
+      <div class="card">
+        <div class="card-content">
+          <h3 class="title is-5">Real-Time Analysis (3s Refresh)</h3>
+          <table class="table is-bordered is-fullwidth" id="coinTable">
+            <thead>
+              <tr>
+                <th>Coin</th>
+                <th>Price</th>
+                <th>1m %</th>
+                <th>RSI(14)</th>
+                <th>Vol Delta</th>
+                <th>Momentum</th>
+                <th>Order Flow</th>
+                <th>Net Flow</th>
+                <th>Pressure</th>
+                <th>Confidence</th>
+                <th>AI Signal</th>
+                <th>Time</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- AI Recommendation -->
+      <div class="box" id="aiRec">
+        <h3 class="title is-5">AI Recommendation</h3>
+        <p id="aiText"></p>
+      </div>
+
+      <!-- Volume Profile -->
+      <div class="box">
+        <h3 class="title is-5">Volume Profile (Last 30 min)</h3>
+        <div id="vpTotals"></div>
+        <canvas id="vpChart" height="400"></canvas>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- jQuery -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+
+  <script>
+    // Format price with proper decimals
+    function formatPrice(price) {
+      const num = parseFloat(price);
+      if (num >= 1000) {
+        return '$' + num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      } else if (num >= 1) {
+        return '$' + num.toLocaleString('en-US', { minimumFractionDigits: 3, maximumFractionDigits: 4 });
+      } else if (num >= 0.01) {
+        return '$' + num.toLocaleString('en-US', { minimumFractionDigits: 4, maximumFractionDigits: 6 });
+      } else {
+        return '$' + num.toLocaleString('en-US', { minimumFractionDigits: 6, maximumFractionDigits: 8 });
+      }
+    }
+
+    // Format currency
+    function formatCurrency(num) {
+      return '$' + num.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    }
+
+    // Get local time
+    function getLocalTime() {
+      const now = new Date();
+      return now.toLocaleString('en-US', { 
+        month: '2-digit', 
+        day: '2-digit', 
+        hour: '2-digit', 
+        minute: '2-digit', 
+        second: '2-digit',
+        hour12: false 
+      });
+    }
+
+    // Calculate RSI using RMA
+    function calculateRSI(candles, period = 14) {
+      if (candles.length < period + 1) return 50;
+      
+      const changes = [];
+      for (let i = 1; i < candles.length; i++) {
+        const prevClose = parseFloat(candles[i - 1][4]);
+        const currClose = parseFloat(candles[i][4]);
+        changes.push(currClose - prevClose);
+      }
+      
+      if (changes.length < period) return 50;
+      
+      const gains = changes.map(c => c > 0 ? c : 0);
+      const losses = changes.map(c => c < 0 ? Math.abs(c) : 0);
+      
+      let avgGain = gains.slice(0, period).reduce((a, b) => a + b, 0) / period;
+      let avgLoss = losses.slice(0, period).reduce((a, b) => a + b, 0) / period;
+      
+      const alpha = 1 / period;
+      for (let i = period; i < changes.length; i++) {
+        avgGain = (gains[i] * alpha) + (avgGain * (1 - alpha));
+        avgLoss = (losses[i] * alpha) + (avgLoss * (1 - alpha));
+      }
+      
+      if (avgLoss === 0) return 100;
+      const rs = avgGain / avgLoss;
+      const rsi = 100 - (100 / (1 + rs));
+      
+      return rsi;
+    }
+
+    // Calculate Volume Delta with taker buy volume
+    function calculateVolumeDelta(candles) {
+      let buyVolume = 0;
+      let sellVolume = 0;
+      
+      candles.forEach(candle => {
+        const volume = parseFloat(candle[5]);
+        const takerBuyVolume = parseFloat(candle[9]);
+        
+        buyVolume += takerBuyVolume;
+        sellVolume += (volume - takerBuyVolume);
+      });
+      
+      const totalVolume = buyVolume + sellVolume;
+      const delta = totalVolume > 0 ? ((buyVolume - sellVolume) / totalVolume) * 100 : 0;
+      
+      return { delta, buyVolume, sellVolume };
+    }
+
+    // Calculate Momentum (very short term)
+    function calculateMomentum(candles, period = 3) {
+      if (candles.length < period + 1) return 0;
+      
+      const closes = candles.map(c => parseFloat(c[4]));
+      const currentPrice = closes[closes.length - 1];
+      const pastPrice = closes[closes.length - period - 1];
+      
+      return ((currentPrice - pastPrice) / pastPrice) * 100;
+    }
+
+    // Calculate Order Flow - Fixed to return meaningful values
+    function calculateOrderFlow(candles) {
+      let cumulativeFlow = 0;
+      let totalVolume = 0;
+      
+      candles.forEach((candle) => {
+        const open = parseFloat(candle[1]);
+        const high = parseFloat(candle[2]);
+        const low = parseFloat(candle[3]);
+        const close = parseFloat(candle[4]);
+        const volume = parseFloat(candle[5]);
+        const quoteVolume = parseFloat(candle[7]); // Quote asset volume (USDT)
+        
+        totalVolume += quoteVolume;
+        
+        const range = high - low;
+        if (range > 0) {
+          // Where did price close in the range? (0 = low, 1 = high)
+          const closePosition = (close - low) / range;
+          
+          // Convert to -1 to +1 scale
+          const flowWeight = (closePosition - 0.5) * 2;
+          
+          // Weight by quote volume (USDT volume)
+          cumulativeFlow += flowWeight * quoteVolume;
+        }
+      });
+      
+      // Return in millions for readability
+      return cumulativeFlow / 1000000;
+    }
+
+    // Calculate Net Flow
+    function calculateNetFlow(candles, volumeDelta) {
+      let netFlow = 0;
+      const recentCandles = candles.slice(-3);
+      
+      recentCandles.forEach(candle => {
+        const open = parseFloat(candle[1]);
+        const close = parseFloat(candle[4]);
+        const quoteVolume = parseFloat(candle[7]);
+        const priceChange = ((close - open) / open) * 100;
+        
+        netFlow += quoteVolume * (priceChange / 100);
+      });
+      
+      netFlow = (netFlow / 1000000) * (1 + volumeDelta / 200);
+      
+      return netFlow;
+    }
+
+    // Get 1-minute price change
+    async function get1MinChange(coin) {
+      return new Promise((resolve) => {
+        const url = `https://api.binance.com/api/v3/klines?symbol=${coin}&interval=1m&limit=2`;
+        $.getJSON(url, function(data) {
+          if (data && data.length >= 2) {
+            const prevClose = parseFloat(data[0][4]);
+            const currentClose = parseFloat(data[1][4]);
+            const change = ((currentClose - prevClose) / prevClose) * 100;
+            resolve(change);
+          } else {
+            resolve(0);
+          }
+        }).fail(function() {
+          resolve(0);
+        });
+      });
+    }
+
+    // ENHANCED ULTRA SENSITIVE ALGORITHM with VP factor
+    function ultraSensitiveAnalysis(rsi, volumeDelta, momentum, orderFlow, netFlow, oneMinChange, vpFactor, vpDeltaDirection) {
+      let score = 0;
+      
+      // Factor 1: 1-minute price change (30% weight) - MOST IMPORTANT
+      if (oneMinChange > 0.1) {
+        score += 30;
+      } else if (oneMinChange < -0.1) {
+        score -= 30;
+      }
+      
+      // Factor 2: Volume Delta (25% weight)
+      if (volumeDelta > 2) {
+        score += 25;
+      } else if (volumeDelta < -2) {
+        score -= 25;
+      }
+      
+      // Factor 3: RSI (15% weight)
+      if (rsi < 40) {
+        score += 15;
+      } else if (rsi > 60) {
+        score -= 15;
+      }
+      
+      // Factor 4: Momentum (15% weight)
+      if (momentum > 0.2) {
+        score += 15;
+      } else if (momentum < -0.2) {
+        score -= 15;
+      }
+      
+      // Factor 5: Order Flow (10% weight)
+      if (orderFlow > 1) {
+        score += 10;
+      } else if (orderFlow < -1) {
+        score -= 10;
+      }
+      
+      // Factor 6: Net Flow (5% weight)
+      if (netFlow > 0.5) {
+        score += 5;
+      } else if (netFlow < -0.5) {
+        score -= 5;
+      }
+      
+      // New Factor 7: Volume Profile (10% weight)
+      score += vpFactor;
+      
+      const confidence = Math.min(100, Math.abs(score));
+      
+      let signal, css, direction;
+      if (score > 50) {
+        signal = "STRONG BUY 🚀";
+        css = "is-strong-buy";
+        direction = "STRONG BULLISH";
+      } else if (score > 20) {
+        signal = "BUY ⬆";
+        css = "is-buy";
+        direction = "BULLISH";
+      } else if (score > 5) {
+        signal = "WEAK BUY";
+        css = "is-buy";
+        direction = "SLIGHTLY BULLISH";
+      } else if (score < -50) {
+        signal = "STRONG SELL ⚠";
+        css = "is-strong-sell";
+        direction = "STRONG BEARISH";
+      } else if (score < -20) {
+        signal = "SELL ⬇";
+        css = "is-sell";
+        direction = "BEARISH";
+      } else if (score < -5) {
+        signal = "WEAK SELL";
+        css = "is-sell";
+        direction = "SLIGHTLY BEARISH";
+      } else {
+        signal = "HOLD ⸱";
+        css = "";
+        direction = "NEUTRAL";
+      }
+      
+      return { signal, css, confidence, score, direction, vpDeltaDirection };
+    }
+
+    // Fetch candle data
+    async function fetchCandleData(coin, interval = '1m', limit = 30) {
+      return new Promise((resolve) => {
+        const url = `https://api.binance.com/api/v3/klines?symbol=${coin}&interval=${interval}&limit=${limit}`;
+        $.getJSON(url, function(data) {
+          resolve(data);
+        }).fail(function() {
+          resolve([]);
+        });
+      });
+    }
+
+    // Draw Volume Profile Chart
+    function drawVPChart(volAtPrice, deltaAtPrice, minPrice, priceRange, rows, maxVol) {
+      const labels = [];
+      const data = [];
+      const colors = [];
+
+      for (let j = rows - 1; j >= 0; j--) {  // Reverse to show high prices at top
+        const binMid = minPrice + j * priceRange + priceRange / 2;
+        labels.push(formatPrice(binMid));
+        data.push(volAtPrice[j] / maxVol * 100);
+        const binDelta = deltaAtPrice[j];
+        let color = 'rgba(0, 0, 255, 0.5)';
+        if (binDelta > 0) color = 'rgba(0, 255, 0, 0.5)';
+        if (binDelta < 0) color = 'rgba(255, 0, 0, 0.5)';
+        colors.push(color);
+      }
+
+      const ctx = document.getElementById('vpChart').getContext('2d');
+      if (window.vpChart) window.vpChart.destroy();
+      window.vpChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Volume',
+            data: data,
+            backgroundColor: colors,
+            borderWidth: 1
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          scales: {
+            x: { beginAtZero: true },
+            y: { reverse: false }
+          },
+          plugins: {
+            legend: { display: false }
+          }
+        }
+      });
+    }
+
+    // Main fetch function
+    async function fetchSelectedCoinData(coin) {
+      try {
+        // Fetch 1-minute candles for maximum responsiveness
+        const candles = await fetchCandleData(coin, '1m', 30);
+        
+        if (candles.length === 0) {
+          console.error("No candle data available");
+          return;
+        }
+        
+        // Get 1-minute change
+        const oneMinChange = await get1MinChange(coin);
+        
+        // Calculate indicators
+        const rsi = calculateRSI(candles, 14);
+        const volumeDeltaData = calculateVolumeDelta(candles.slice(-5));
+        const momentum = calculateMomentum(candles, 3);
+        const orderFlow = calculateOrderFlow(candles.slice(-5));
+        const netFlow = calculateNetFlow(candles, volumeDeltaData.delta);
+        
+        // Get current price
+        const currentPrice = parseFloat(candles[candles.length - 1][4]);
+        
+        // Calculate Volume Profile data
+        let minPrice = Infinity, maxPrice = -Infinity;
+        let totalBuyValue = 0;
+        let totalSellValue = 0;
+        candles.forEach(c => {
+          minPrice = Math.min(minPrice, parseFloat(c[3]));
+          maxPrice = Math.max(maxPrice, parseFloat(c[2]));
+        });
+        const rows = 24;
+        const priceRange = (maxPrice - minPrice) / rows;
+        const volAtPrice = new Array(rows).fill(0);
+        const deltaAtPrice = new Array(rows).fill(0);
+        
+        candles.forEach(c => {
+          const high = parseFloat(c[2]);
+          const low = parseFloat(c[3]);
+          const closeP = parseFloat(c[4]);
+          const vol = parseFloat(c[5]);
+          const quote = parseFloat(c[7]);
+          let delta = 0;
+          if (high !== low) {
+            delta = vol * (closeP - low) / (high - low) - vol * (high - closeP) / (high - low);
+          }
+          const buyVol = (vol + delta) / 2;
+          const sellVol = (vol - delta) / 2;
+          const avgPrice = quote / vol || closeP;
+          totalBuyValue += buyVol * avgPrice;
+          totalSellValue += sellVol * avgPrice;
+          
+          const range = high - low;
+          if (range > 0) {
+            for (let j = 0; j < rows; j++) {
+              const binLow = minPrice + j * priceRange;
+              const binHigh = binLow + priceRange;
+              if (high > binLow && low < binHigh) {
+                const overlap = Math.min(high, binHigh) - Math.max(low, binLow);
+                const overlapRatio = overlap / range;
+                volAtPrice[j] += vol * overlapRatio;
+                deltaAtPrice[j] += delta * overlapRatio;
+              }
+            }
+          }
+        });
+        
+        const maxVol = Math.max(...volAtPrice);
+        
+        // Calculate VP factor for signal
+        let vpFactor = 0;
+        let vpDeltaDirection = '';
+        const closeBin = Math.floor((currentPrice - minPrice) / priceRange);
+        if (closeBin >= 0 && closeBin < rows) {
+          const volNorm = volAtPrice[closeBin] / maxVol;
+          const binDelta = deltaAtPrice[closeBin];
+          if (volNorm > 0.5) {
+            vpFactor = binDelta > 0 ? 10 : -10;
+            vpDeltaDirection = binDelta > 0 ? 'positive' : 'negative';
+          }
+        }
+        
+        // Run analysis with VP factor
+        const analysis = ultraSensitiveAnalysis(
+          rsi,
+          volumeDeltaData.delta,
+          momentum,
+          orderFlow,
+          netFlow,
+          oneMinChange,
+          vpFactor,
+          vpDeltaDirection
+        );
+        
+        // Determine colors
+        let confidenceClass = 'confidence-low';
+        if (analysis.confidence > 60) confidenceClass = 'confidence-high';
+        else if (analysis.confidence > 30) confidenceClass = 'confidence-medium';
+        
+        const oneMinClass = oneMinChange >= 0 ? 'is-up' : 'is-down';
+        const rsiColor = rsi < 40 ? 'is-up' : rsi > 60 ? 'is-down' : '';
+        const volumeDeltaColor = volumeDeltaData.delta > 2 ? 'is-up' : volumeDeltaData.delta < -2 ? 'is-down' : '';
+        const momentumColor = momentum > 0.2 ? 'is-up' : momentum < -0.2 ? 'is-down' : '';
+        const orderFlowColor = orderFlow > 0 ? 'is-up' : orderFlow < 0 ? 'is-down' : '';
+        const netFlowClass = netFlow > 0 ? 'net-flow-positive' : 'net-flow-negative';
+        
+        const localTime = getLocalTime();
+        
+        const row = `
+          <tr class="${analysis.css}">
+            <td><strong>${coin}</strong></td>
+            <td>${formatPrice(currentPrice)}</td>
+            <td class="${oneMinClass}"><strong>${oneMinChange >= 0 ? '+' : ''}${oneMinChange.toFixed(3)}%</strong></td>
+            <td class="${rsiColor}"><strong>${rsi.toFixed(1)}</strong></td>
+            <td class="${volumeDeltaColor}"><strong>${volumeDeltaData.delta.toFixed(1)}%</strong></td>
+            <td class="${momentumColor}"><strong>${momentum.toFixed(2)}%</strong></td>
+            <td class="${orderFlowColor}"><strong>${orderFlow.toFixed(2)}M</strong></td>
+            <td class="${netFlowClass}"><strong>${netFlow > 0 ? '+' : ''}${netFlow.toFixed(2)}M</strong></td>
+            <td>
+              <span class="pressure-indicator ${analysis.direction.includes('BULLISH') ? 'pressure-buying' : analysis.direction.includes('BEARISH') ? 'pressure-selling' : 'pressure-neutral'}">
+                ${analysis.direction}
+              </span>
+            </td>
+            <td>
+              <strong>${analysis.confidence.toFixed(0)}%</strong>
+              <div class="confidence-meter">
+                <div class="confidence-fill ${confidenceClass}" style="width: ${analysis.confidence}%"></div>
+              </div>
+            </td>
+            <td><strong>${analysis.signal}</strong></td>
+            <td style="font-size: 10px;">${localTime}</td>
+          </tr>
+        `;
+
+        $("#coinTable tbody").prepend(row);
+        if ($("#coinTable tbody tr").length > 20) {
+          $("#coinTable tbody tr:last").remove();
+        }
+        
+        // Update AI Recommendation
+        let aiText = `Based on current RSI of ${rsi.toFixed(1)}, volume delta of ${volumeDeltaData.delta.toFixed(1)}%, momentum of ${momentum.toFixed(2)}%, and net flow of ${netFlow.toFixed(2)}M, the algorithm recommends ${analysis.signal} with ${analysis.confidence}% confidence.`;
+        if (vpFactor !== 0) {
+          aiText += ` Additionally, price is near a high volume node with ${vpDeltaDirection} delta, supporting the ${vpDeltaDirection === 'positive' ? 'buy' : 'sell'} signal.`;
+        }
+        $("#aiText").html(aiText);
+        
+        // Update VP Totals
+        $("#vpTotals").html(`Total Buy Value (Green): ${formatCurrency(totalBuyValue)}<br>Total Sell Value (Red): ${formatCurrency(totalSellValue)}`);
+        
+        // Draw VP Chart
+        drawVPChart(volAtPrice, deltaAtPrice, minPrice, priceRange, rows, maxVol);
+        
+      } catch (error) {
+        console.error("Error in analysis:", error);
+      }
+    }
+
+    $(document).ready(function() {
+      $('#loadData').click(function(){
+        const coin = $('#coinSelector').val();
+        fetchSelectedCoinData(coin);
+      });
+
+      $('#clearData').click(function(){
+        $("#coinTable tbody").empty();
+        $("#aiText").empty();
+        $("#vpTotals").empty();
+        if (window.vpChart) window.vpChart.destroy();
+      });
+
+      // Auto-refresh every 3 seconds
+      setInterval(function(){
+        const coin = $('#coinSelector').val();
+        if ($("#coinTable tbody tr").length > 0) {
+          fetchSelectedCoinData(coin);
+        }
+      }, 3000); // 3 seconds
+    });
+  </script>
+</body>
+</html>
