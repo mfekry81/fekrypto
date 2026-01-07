@@ -3,19 +3,21 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Volume Monitor v8-1 - Price Prediction</title>
+  <title>AI Volume Monitor v8-1 - Ultra Responsive</title>
 
   <!-- Bulma CSS -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.6.2/css/bulma.min.css">
   <!-- Font Awesome -->
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <style>
     body { background: #f9f9f9; }
     .navbar { margin-bottom: 2rem; }
     .title { font-size: 2rem; }
     .box { margin-bottom: 1rem; }
-    table th, table td { text-align: center; vertical-align: middle; font-size: 11px; }
+    table th, table td { text-align: center; vertical-align: middle; font-size: 12px; }
     .is-strong-buy { background-color: #a8e6a8; font-weight: bold; }
     .is-buy { background-color: #d4f8d4; }
     .is-sell { background-color: #ffd4d4; }
@@ -23,18 +25,18 @@
     .is-up { color: #23d160; }
     .is-down { color: #ff3860; }
     .pressure-indicator {
-      padding: 3px 6px;
-      border-radius: 3px;
+      padding: 4px 8px;
+      border-radius: 4px;
       font-weight: bold;
       display: inline-block;
-      font-size: 9px;
+      font-size: 10px;
     }
     .pressure-buying { background-color: #48c774; color: white; }
     .pressure-selling { background-color: #f14668; color: white; }
     .pressure-neutral { background-color: #ffdd57; color: #333; }
     .confidence-meter {
       width: 100%;
-      height: 5px;
+      height: 6px;
       background: #e0e0e0;
       border-radius: 3px;
       overflow: hidden;
@@ -48,44 +50,26 @@
     .confidence-medium { background: #ffdd57; }
     .confidence-low { background: #f14668; }
     .algorithm-badge {
-      font-size: 9px;
-      padding: 2px 5px;
+      font-size: 10px;
+      padding: 2px 6px;
       border-radius: 3px;
       background: #3273dc;
       color: white;
       margin-left: 5px;
     }
-    .prediction-box {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      padding: 4px 8px;
-      border-radius: 4px;
-      font-weight: bold;
-      font-size: 11px;
+    .net-flow-positive { color: #48c774; font-weight: bold; }
+    .net-flow-negative { color: #f14668; font-weight: bold; }
+    #vpTotals { 
+      font-size: 12px; 
+      margin-bottom: 10px; 
+      text-align: left; 
     }
-    .target-up { 
-      background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-      color: white;
-      padding: 3px 6px;
-      border-radius: 3px;
-      font-weight: bold;
-      font-size: 10px;
+    #vpChartContainer {
+      display: flex;
+      align-items: center;
     }
-    .target-down { 
-      background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
-      color: white;
-      padding: 3px 6px;
-      border-radius: 3px;
-      font-weight: bold;
-      font-size: 10px;
-    }
-    .probability-badge {
-      background: #ffdd57;
-      color: #333;
-      padding: 2px 5px;
-      border-radius: 3px;
-      font-size: 9px;
-      font-weight: bold;
+    #vpChart {
+      flex: 1;
     }
   </style>
 </head>
@@ -93,9 +77,9 @@
   <section class="section">
     <div class="container">
       <p>
-        <span style="font-size:26px;"><strong>Binance Market Watch v8-1</strong></span>
-        <span class="algorithm-badge">PRICE PREDICTION AI</span><br>
-        <span style="font-size:10px; color: #666;">5s Refresh | Real-Time Analysis + Price Target Prediction Algorithm</span>
+        <span style="font-size:28px;"><strong>Binance Market Watch v8-1</strong></span>
+        <span class="algorithm-badge">ULTRA RESPONSIVE + VOLUME PROFILE</span><br>
+        <span style="font-size:11px; color: #666;">3s Refresh | Real-Time RSI + Volume Delta + Momentum + Order Flow + Net Flow + Enhanced AI Signals</span>
       </p>
 
       <!-- Selected Coin Data Section -->
@@ -132,27 +116,40 @@
 
       <div class="card">
         <div class="card-content">
-          <h3 class="title is-6">Real-Time Analysis + Price Prediction (5s Refresh)</h3>
+          <h3 class="title is-5">Real-Time Analysis (3s Refresh)</h3>
           <table class="table is-bordered is-fullwidth" id="coinTable">
             <thead>
               <tr>
                 <th>Coin</th>
                 <th>Price</th>
                 <th>1m %</th>
-                <th>RSI</th>
-                <th>Vol Δ</th>
-                <th>Mom</th>
-                <th>Flow</th>
+                <th>RSI(14)</th>
+                <th>Vol Delta</th>
+                <th>Momentum</th>
+                <th>Order Flow</th>
+                <th>Net Flow</th>
                 <th>Pressure</th>
-                <th>Signal</th>
-                <th>Target Price</th>
-                <th>Probability</th>
+                <th>Confidence</th>
+                <th>AI Signal</th>
                 <th>Time</th>
               </tr>
             </thead>
             <tbody></tbody>
           </table>
         </div>
+      </div>
+
+      <!-- AI Recommendation -->
+      <div class="box" id="aiRec">
+        <h3 class="title is-5">AI Recommendation</h3>
+        <p id="aiText"></p>
+      </div>
+
+      <!-- Volume Profile -->
+      <div class="box">
+        <h3 class="title is-5">Volume Profile (Last 30 min)</h3>
+        <div id="vpTotals"></div>
+        <canvas id="vpChart" height="400"></canvas>
       </div>
 
     </div>
@@ -176,6 +173,11 @@
       }
     }
 
+    // Format currency
+    function formatCurrency(num) {
+      return '$' + num.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    }
+
     // Get local time
     function getLocalTime() {
       const now = new Date();
@@ -189,7 +191,7 @@
       });
     }
 
-    // Calculate RSI
+    // Calculate RSI using RMA
     function calculateRSI(candles, period = 14) {
       if (candles.length < period + 1) return 50;
       
@@ -221,7 +223,7 @@
       return rsi;
     }
 
-    // Calculate Volume Delta
+    // Calculate Volume Delta with taker buy volume
     function calculateVolumeDelta(candles) {
       let buyVolume = 0;
       let sellVolume = 0;
@@ -240,7 +242,7 @@
       return { delta, buyVolume, sellVolume };
     }
 
-    // Calculate Momentum
+    // Calculate Momentum (very short term)
     function calculateMomentum(candles, period = 3) {
       if (candles.length < period + 1) return 0;
       
@@ -251,138 +253,58 @@
       return ((currentPrice - pastPrice) / pastPrice) * 100;
     }
 
-    // Calculate Order Flow
+    // Calculate Order Flow - Fixed to return meaningful values
     function calculateOrderFlow(candles) {
       let cumulativeFlow = 0;
+      let totalVolume = 0;
       
       candles.forEach((candle) => {
         const open = parseFloat(candle[1]);
         const high = parseFloat(candle[2]);
         const low = parseFloat(candle[3]);
         const close = parseFloat(candle[4]);
-        const quoteVolume = parseFloat(candle[7]);
+        const volume = parseFloat(candle[5]);
+        const quoteVolume = parseFloat(candle[7]); // Quote asset volume (USDT)
+        
+        totalVolume += quoteVolume;
         
         const range = high - low;
         if (range > 0) {
+          // Where did price close in the range? (0 = low, 1 = high)
           const closePosition = (close - low) / range;
+          
+          // Convert to -1 to +1 scale
           const flowWeight = (closePosition - 0.5) * 2;
+          
+          // Weight by quote volume (USDT volume)
           cumulativeFlow += flowWeight * quoteVolume;
         }
       });
       
+      // Return in millions for readability
       return cumulativeFlow / 1000000;
     }
 
-    // Calculate Average True Range (ATR) for volatility
-    function calculateATR(candles, period = 5) {
-      if (candles.length < period) return 0;
+    // Calculate Net Flow
+    function calculateNetFlow(candles, volumeDelta) {
+      let netFlow = 0;
+      const recentCandles = candles.slice(-3);
       
-      const ranges = [];
-      for (let i = 1; i < candles.length; i++) {
-        const high = parseFloat(candles[i][2]);
-        const low = parseFloat(candles[i][3]);
-        const prevClose = parseFloat(candles[i - 1][4]);
+      recentCandles.forEach(candle => {
+        const open = parseFloat(candle[1]);
+        const close = parseFloat(candle[4]);
+        const quoteVolume = parseFloat(candle[7]);
+        const priceChange = ((close - open) / open) * 100;
         
-        const tr = Math.max(
-          high - low,
-          Math.abs(high - prevClose),
-          Math.abs(low - prevClose)
-        );
-        ranges.push(tr);
-      }
+        netFlow += quoteVolume * (priceChange / 100);
+      });
       
-      const recentRanges = ranges.slice(-period);
-      return recentRanges.reduce((a, b) => a + b, 0) / period;
+      netFlow = (netFlow / 1000000) * (1 + volumeDelta / 200);
+      
+      return netFlow;
     }
 
-    // PRICE PREDICTION ALGORITHM
-    function predictPriceTarget(currentPrice, rsi, volumeDelta, momentum, orderFlow, atr, candles) {
-      // Calculate trend strength (0-100)
-      let trendStrength = 0;
-      
-      // RSI contribution (20%)
-      if (rsi < 30) {
-        trendStrength += 20; // Oversold - bullish
-      } else if (rsi > 70) {
-        trendStrength -= 20; // Overbought - bearish
-      } else if (rsi >= 45 && rsi <= 55) {
-        trendStrength += 5;
-      }
-      
-      // Volume Delta contribution (30%)
-      trendStrength += (volumeDelta / 100) * 30;
-      
-      // Momentum contribution (25%)
-      if (momentum > 0) {
-        trendStrength += Math.min(25, momentum * 5);
-      } else {
-        trendStrength += Math.max(-25, momentum * 5);
-      }
-      
-      // Order Flow contribution (25%)
-      if (orderFlow > 0) {
-        trendStrength += Math.min(25, orderFlow * 3);
-      } else {
-        trendStrength += Math.max(-25, orderFlow * 3);
-      }
-      
-      // Calculate volatility multiplier based on ATR
-      const volatilityMultiplier = atr / currentPrice;
-      
-      // Base movement percentage
-      let expectedMove = (trendStrength / 100) * volatilityMultiplier * 100;
-      
-      // Apply ATR to determine realistic target range
-      // For bullish: add ATR multiplied by trend strength
-      // For bearish: subtract ATR multiplied by trend strength
-      let targetPrice;
-      let targetMove;
-      
-      if (trendStrength > 0) {
-        // Bullish prediction
-        targetMove = atr * (trendStrength / 50) * 1.5;
-        targetPrice = currentPrice + targetMove;
-      } else {
-        // Bearish prediction
-        targetMove = atr * (Math.abs(trendStrength) / 50) * 1.5;
-        targetPrice = currentPrice - targetMove;
-      }
-      
-      // Calculate probability based on multiple confirmations
-      let probability = 50; // Base 50%
-      
-      // RSI confirmation
-      if ((rsi < 30 && trendStrength > 0) || (rsi > 70 && trendStrength < 0)) {
-        probability += 15;
-      }
-      
-      // Volume confirmation
-      if (Math.abs(volumeDelta) > 10) {
-        probability += 15;
-      }
-      
-      // Momentum confirmation
-      if ((momentum > 0.5 && trendStrength > 0) || (momentum < -0.5 && trendStrength < 0)) {
-        probability += 10;
-      }
-      
-      // Order flow confirmation
-      if ((orderFlow > 2 && trendStrength > 0) || (orderFlow < -2 && trendStrength < 0)) {
-        probability += 10;
-      }
-      
-      probability = Math.min(95, Math.max(55, probability));
-      
-      return {
-        targetPrice: targetPrice,
-        direction: trendStrength > 0 ? 'UP' : 'DOWN',
-        probability: probability,
-        expectedMove: Math.abs(targetMove),
-        trendStrength: trendStrength
-      };
-    }
-
-    // Get 1-minute change
+    // Get 1-minute price change
     async function get1MinChange(coin) {
       return new Promise((resolve) => {
         const url = `https://api.binance.com/api/v3/klines?symbol=${coin}&interval=1m&limit=2`;
@@ -401,24 +323,54 @@
       });
     }
 
-    // ULTRA SENSITIVE ALGORITHM
-    function ultraSensitiveAnalysis(rsi, volumeDelta, momentum, orderFlow, oneMinChange) {
+    // ENHANCED ULTRA SENSITIVE ALGORITHM with VP factor
+    function ultraSensitiveAnalysis(rsi, volumeDelta, momentum, orderFlow, netFlow, oneMinChange, vpFactor, vpDeltaDirection) {
       let score = 0;
       
-      if (oneMinChange > 0.1) score += 30;
-      else if (oneMinChange < -0.1) score -= 30;
+      // Factor 1: 1-minute price change (30% weight) - MOST IMPORTANT
+      if (oneMinChange > 0.1) {
+        score += 30;
+      } else if (oneMinChange < -0.1) {
+        score -= 30;
+      }
       
-      if (volumeDelta > 2) score += 25;
-      else if (volumeDelta < -2) score -= 25;
+      // Factor 2: Volume Delta (25% weight)
+      if (volumeDelta > 2) {
+        score += 25;
+      } else if (volumeDelta < -2) {
+        score -= 25;
+      }
       
-      if (rsi < 40) score += 15;
-      else if (rsi > 60) score -= 15;
+      // Factor 3: RSI (15% weight)
+      if (rsi < 40) {
+        score += 15;
+      } else if (rsi > 60) {
+        score -= 15;
+      }
       
-      if (momentum > 0.2) score += 15;
-      else if (momentum < -0.2) score -= 15;
+      // Factor 4: Momentum (15% weight)
+      if (momentum > 0.2) {
+        score += 15;
+      } else if (momentum < -0.2) {
+        score -= 15;
+      }
       
-      if (orderFlow > 1) score += 10;
-      else if (orderFlow < -1) score -= 10;
+      // Factor 5: Order Flow (10% weight)
+      if (orderFlow > 1) {
+        score += 10;
+      } else if (orderFlow < -1) {
+        score -= 10;
+      }
+      
+      // Factor 6: Net Flow (5% weight)
+      if (netFlow > 0.5) {
+        score += 5;
+      } else if (netFlow < -0.5) {
+        score -= 5;
+      }
+      
+      // New Factor 7: Volume Profile (10% weight)
+      score += vpFactor;
       
       const confidence = Math.min(100, Math.abs(score));
       
@@ -453,7 +405,7 @@
         direction = "NEUTRAL";
       }
       
-      return { signal, css, confidence, score, direction };
+      return { signal, css, confidence, score, direction, vpDeltaDirection };
     }
 
     // Fetch candle data
@@ -468,9 +420,53 @@
       });
     }
 
+    // Draw Volume Profile Chart
+    function drawVPChart(volAtPrice, deltaAtPrice, minPrice, priceRange, rows, maxVol) {
+      const labels = [];
+      const data = [];
+      const colors = [];
+
+      for (let j = rows - 1; j >= 0; j--) {  // Reverse to show high prices at top
+        const binMid = minPrice + j * priceRange + priceRange / 2;
+        labels.push(formatPrice(binMid));
+        data.push(volAtPrice[j] / maxVol * 100);
+        const binDelta = deltaAtPrice[j];
+        let color = 'rgba(0, 0, 255, 0.5)';
+        if (binDelta > 0) color = 'rgba(0, 255, 0, 0.5)';
+        if (binDelta < 0) color = 'rgba(255, 0, 0, 0.5)';
+        colors.push(color);
+      }
+
+      const ctx = document.getElementById('vpChart').getContext('2d');
+      if (window.vpChart) window.vpChart.destroy();
+      window.vpChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Volume',
+            data: data,
+            backgroundColor: colors,
+            borderWidth: 1
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          scales: {
+            x: { beginAtZero: true },
+            y: { reverse: false }
+          },
+          plugins: {
+            legend: { display: false }
+          }
+        }
+      });
+    }
+
     // Main fetch function
     async function fetchSelectedCoinData(coin) {
       try {
+        // Fetch 1-minute candles for maximum responsiveness
         const candles = await fetchCandleData(coin, '1m', 30);
         
         if (candles.length === 0) {
@@ -478,34 +474,88 @@
           return;
         }
         
+        // Get 1-minute change
         const oneMinChange = await get1MinChange(coin);
-        const currentPrice = parseFloat(candles[candles.length - 1][4]);
         
         // Calculate indicators
         const rsi = calculateRSI(candles, 14);
         const volumeDeltaData = calculateVolumeDelta(candles.slice(-5));
         const momentum = calculateMomentum(candles, 3);
         const orderFlow = calculateOrderFlow(candles.slice(-5));
-        const atr = calculateATR(candles, 5);
+        const netFlow = calculateNetFlow(candles, volumeDeltaData.delta);
         
-        // Run analysis
+        // Get current price
+        const currentPrice = parseFloat(candles[candles.length - 1][4]);
+        
+        // Calculate Volume Profile data
+        let minPrice = Infinity, maxPrice = -Infinity;
+        let totalBuyValue = 0;
+        let totalSellValue = 0;
+        candles.forEach(c => {
+          minPrice = Math.min(minPrice, parseFloat(c[3]));
+          maxPrice = Math.max(maxPrice, parseFloat(c[2]));
+        });
+        const rows = 24;
+        const priceRange = (maxPrice - minPrice) / rows;
+        const volAtPrice = new Array(rows).fill(0);
+        const deltaAtPrice = new Array(rows).fill(0);
+        
+        candles.forEach(c => {
+          const high = parseFloat(c[2]);
+          const low = parseFloat(c[3]);
+          const closeP = parseFloat(c[4]);
+          const vol = parseFloat(c[5]);
+          const quote = parseFloat(c[7]);
+          let delta = 0;
+          if (high !== low) {
+            delta = vol * (closeP - low) / (high - low) - vol * (high - closeP) / (high - low);
+          }
+          const buyVol = (vol + delta) / 2;
+          const sellVol = (vol - delta) / 2;
+          const avgPrice = quote / vol || closeP;
+          totalBuyValue += buyVol * avgPrice;
+          totalSellValue += sellVol * avgPrice;
+          
+          const range = high - low;
+          if (range > 0) {
+            for (let j = 0; j < rows; j++) {
+              const binLow = minPrice + j * priceRange;
+              const binHigh = binLow + priceRange;
+              if (high > binLow && low < binHigh) {
+                const overlap = Math.min(high, binHigh) - Math.max(low, binLow);
+                const overlapRatio = overlap / range;
+                volAtPrice[j] += vol * overlapRatio;
+                deltaAtPrice[j] += delta * overlapRatio;
+              }
+            }
+          }
+        });
+        
+        const maxVol = Math.max(...volAtPrice);
+        
+        // Calculate VP factor for signal
+        let vpFactor = 0;
+        let vpDeltaDirection = '';
+        const closeBin = Math.floor((currentPrice - minPrice) / priceRange);
+        if (closeBin >= 0 && closeBin < rows) {
+          const volNorm = volAtPrice[closeBin] / maxVol;
+          const binDelta = deltaAtPrice[closeBin];
+          if (volNorm > 0.5) {
+            vpFactor = binDelta > 0 ? 10 : -10;
+            vpDeltaDirection = binDelta > 0 ? 'positive' : 'negative';
+          }
+        }
+        
+        // Run analysis with VP factor
         const analysis = ultraSensitiveAnalysis(
           rsi,
           volumeDeltaData.delta,
           momentum,
           orderFlow,
-          oneMinChange
-        );
-        
-        // Get price prediction
-        const prediction = predictPriceTarget(
-          currentPrice,
-          rsi,
-          volumeDeltaData.delta,
-          momentum,
-          orderFlow,
-          atr,
-          candles
+          netFlow,
+          oneMinChange,
+          vpFactor,
+          vpDeltaDirection
         );
         
         // Determine colors
@@ -518,36 +568,33 @@
         const volumeDeltaColor = volumeDeltaData.delta > 2 ? 'is-up' : volumeDeltaData.delta < -2 ? 'is-down' : '';
         const momentumColor = momentum > 0.2 ? 'is-up' : momentum < -0.2 ? 'is-down' : '';
         const orderFlowColor = orderFlow > 0 ? 'is-up' : orderFlow < 0 ? 'is-down' : '';
+        const netFlowClass = netFlow > 0 ? 'net-flow-positive' : 'net-flow-negative';
         
         const localTime = getLocalTime();
-        
-        const targetClass = prediction.direction === 'UP' ? 'target-up' : 'target-down';
-        const targetArrow = prediction.direction === 'UP' ? '↑' : '↓';
         
         const row = `
           <tr class="${analysis.css}">
             <td><strong>${coin}</strong></td>
             <td>${formatPrice(currentPrice)}</td>
             <td class="${oneMinClass}"><strong>${oneMinChange >= 0 ? '+' : ''}${oneMinChange.toFixed(3)}%</strong></td>
-            <td class="${rsiColor}"><strong>${rsi.toFixed(0)}</strong></td>
+            <td class="${rsiColor}"><strong>${rsi.toFixed(1)}</strong></td>
             <td class="${volumeDeltaColor}"><strong>${volumeDeltaData.delta.toFixed(1)}%</strong></td>
             <td class="${momentumColor}"><strong>${momentum.toFixed(2)}%</strong></td>
-            <td class="${orderFlowColor}"><strong>${orderFlow.toFixed(1)}M</strong></td>
+            <td class="${orderFlowColor}"><strong>${orderFlow.toFixed(2)}M</strong></td>
+            <td class="${netFlowClass}"><strong>${netFlow > 0 ? '+' : ''}${netFlow.toFixed(2)}M</strong></td>
             <td>
               <span class="pressure-indicator ${analysis.direction.includes('BULLISH') ? 'pressure-buying' : analysis.direction.includes('BEARISH') ? 'pressure-selling' : 'pressure-neutral'}">
                 ${analysis.direction}
               </span>
             </td>
+            <td>
+              <strong>${analysis.confidence.toFixed(0)}%</strong>
+              <div class="confidence-meter">
+                <div class="confidence-fill ${confidenceClass}" style="width: ${analysis.confidence}%"></div>
+              </div>
+            </td>
             <td><strong>${analysis.signal}</strong></td>
-            <td>
-              <span class="${targetClass}">
-                ${targetArrow} ${formatPrice(prediction.targetPrice)}
-              </span>
-            </td>
-            <td>
-              <span class="probability-badge">${prediction.probability.toFixed(0)}%</span>
-            </td>
-            <td style="font-size: 9px;">${localTime}</td>
+            <td style="font-size: 10px;">${localTime}</td>
           </tr>
         `;
 
@@ -555,6 +602,19 @@
         if ($("#coinTable tbody tr").length > 20) {
           $("#coinTable tbody tr:last").remove();
         }
+        
+        // Update AI Recommendation
+        let aiText = `Based on current RSI of ${rsi.toFixed(1)}, volume delta of ${volumeDeltaData.delta.toFixed(1)}%, momentum of ${momentum.toFixed(2)}%, and net flow of ${netFlow.toFixed(2)}M, the algorithm recommends ${analysis.signal} with ${analysis.confidence}% confidence.`;
+        if (vpFactor !== 0) {
+          aiText += ` Additionally, price is near a high volume node with ${vpDeltaDirection} delta, supporting the ${vpDeltaDirection === 'positive' ? 'buy' : 'sell'} signal.`;
+        }
+        $("#aiText").html(aiText);
+        
+        // Update VP Totals
+        $("#vpTotals").html(`Total Buy Value (Green): ${formatCurrency(totalBuyValue)}<br>Total Sell Value (Red): ${formatCurrency(totalSellValue)}`);
+        
+        // Draw VP Chart
+        drawVPChart(volAtPrice, deltaAtPrice, minPrice, priceRange, rows, maxVol);
         
       } catch (error) {
         console.error("Error in analysis:", error);
@@ -569,15 +629,18 @@
 
       $('#clearData').click(function(){
         $("#coinTable tbody").empty();
+        $("#aiText").empty();
+        $("#vpTotals").empty();
+        if (window.vpChart) window.vpChart.destroy();
       });
 
-      // Auto-refresh every 5 seconds
+      // Auto-refresh every 3 seconds
       setInterval(function(){
         const coin = $('#coinSelector').val();
         if ($("#coinTable tbody tr").length > 0) {
           fetchSelectedCoinData(coin);
         }
-      }, 5000);
+      }, 3000); // 3 seconds
     });
   </script>
 </body>

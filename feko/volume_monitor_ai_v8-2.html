@@ -162,7 +162,7 @@
 
       <div class="card">
         <div class="card-content">
-          <h3 class="title is-6">WaveTrend Analysis + Price Prediction (5s Refresh)</h3>
+          <h3 class="title is-6">WaveTrend Analysis + Price Prediction (3s Refresh)</h3>
           <table class="table is-bordered is-fullwidth" id="coinTable">
             <thead>
               <tr>
@@ -607,13 +607,13 @@
         $("#coinTable tbody").empty();
       });
 
-      // Auto-refresh every 5 seconds
+      // Auto-refresh every 3 seconds
       setInterval(function(){
         const coin = $('#coinSelector').val();
         if ($("#coinTable tbody tr").length > 0) {
           fetchSelectedCoinData(coin);
         }
-      }, 5000);
+      }, 3000);
     });
   </script>
 </body>
