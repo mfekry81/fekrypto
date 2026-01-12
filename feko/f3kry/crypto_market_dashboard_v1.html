@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Crypto Futures Signals — Binance Live</title>
+  <title>Crypto Futures Signals — Binance Live by @f3kry</title>
   <style>
     body { font-family: Arial, sans-serif; background: #111; color: #eee; }
     .container { max-width: 1200px; margin: auto; }
@@ -15,7 +15,7 @@
 <body>
   <div class="container">
     
-    <h1>Live Crypto Market + Futures Signals (Binance)</h1>
+    <h1>Live Crypto Market + Futures Signals by @f3kry</h1>
     
     <div id="header">
       <strong>Date/Time (AST UTC+3):</strong> <span id="timestamp"></span><br>
@@ -62,7 +62,7 @@ function astNow() {
 function fmt(val, decimals=2) { return Number(val).toFixed(decimals); }
 
 // == BINANCE LIVE DATA ==
-const symbols = ["BTCUSDT","ETHUSDT","SOLUSDT","BNBUSDT","XRPUSDT","ZECUSDT","SUIUSDT","AVAXUSDT","LTCUSDT"];
+const symbols = ["BTCUSDT","ETHUSDT","SOLUSDT","BNBUSDT","XRPUSDT","ZECUSDT","SUIUSDT","AVAXUSDT","LTCUSDT","LINKUSDT","TAOUSDT","ONDOUSDT","WLDUSDT","ARBUSDT","SEIUSDT","RENDERUSDT","APTUSDT","TIAUSDT"];
 async function fetchBinanceData() {
   const results = {};
   for (let s of symbols) {
