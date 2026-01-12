@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Crypto Futures Signals — Binance Live</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #111; color: #eee; }
+    .container { max-width: 1200px; margin: auto; }
+    table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+    th, td { border: 1px solid #444; padding: 8px; text-align: center; }
+    th { background: #222; }
+    .signal { background: #222; padding: 1rem; margin: .5rem 0; border: 1px solid #444; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    
+    <h1>Live Crypto Market + Futures Signals (Binance)</h1>
+    
+    <div id="header">
+      <strong>Date/Time (AST UTC+3):</strong> <span id="timestamp"></span><br>
+      <strong>Crypto Fear & Greed Index:</strong> <span id="fearGreed"></span> /100
+    </div>
+    
+    <hr>
+
+    <h2>📊 Market Overview</h2>
+    <table>
+      <thead>
+        <tr><th>Coin</th><th>Current Price</th><th>24h High</th><th>24h Low</th><th>24h Volume</th><th>24h Change</th></tr>
+      </thead>
+      <tbody id="marketTable"></tbody>
+    </table>
+
+    <hr>
+
+    <h2>🔔 Futures Signals</h2>
+    <div id="signals"></div>
+
+    <hr>
+
+    <h2>🔥 Top 3 Priority Trades</h2>
+    <div id="priorityTrades"></div>
+
+    <hr>
+
+    <h2>⚠️ Risk Management Guidelines</h2>
+    <ul>
+      <li>Always use stop losses and do not over-leverage.</li>
+      <li>Deploy capital based on Fear & Greed zone interpretation.</li>
+      <li>Scalping: 1–3 day, 5–15% targets | Swing: 1–4 weeks, 20–100% targets.</li>
+      <li>This dashboard is for *informational* purposes only. Always do your own research.</li>
+    </ul>
+
+  </div>
+
+<script>
+// == UTILITIES ==
+function astNow() {
+  return new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Riyadh" }));
+}
+function fmt(val, decimals=2) { return Number(val).toFixed(decimals); }
+
+// == BINANCE LIVE DATA ==
+const symbols = ["BTCUSDT","ETHUSDT","SOLUSDT","BNBUSDT","XRPUSDT","ZECUSDT","SUIUSDT","AVAXUSDT","LTCUSDT"];
+async function fetchBinanceData() {
+  const results = {};
+  for (let s of symbols) {
+    try {
+      // price + 24h ticker
+      let priceRes = await fetch(`https://api.binance.com/api/v3/ticker/24hr?symbol=${s}`);
+      let data = await priceRes.json();
+      results[s] = {
+        price: data.lastPrice,
+        high: data.highPrice,
+        low: data.lowPrice,
+        vol: data.volume,
+        change: data.priceChangePercent
+      };
+    } catch(e) { console.error("Binance error", e); }
+  }
+  return results;
+}
+
+// == FEAR & GREED ==
+async function fetchFearGreedIndex() {
+  try {
+    // Uses a public aggregator that updates often
+    let res = await fetch("https://api.allorigins.win/raw?url=https://cfgi.io/"); // bypass CORS
+    let html = await res.text();
+    let m = html.match(/Score is (\d{1,3})/);
+    if (m) return parseInt(m[1]);
+  } catch (e) { console.error("FearGreed API error", e); }
+  return null;
+}
+
+// == TRADING SIGNALS (Simple Example Logic) ==
+function generateSignal(symbol, price) {
+  let p = parseFloat(price);
+  let direction="WAIT";
+  let entryZone="", stopLoss="", tp1="", tp2="", tp3="", leverage="3x", conf=0, rr="0:0";
+  
+  if (p && p > 0) {
+    let rnd = Math.random()*100;
+    conf = Math.floor(30 + rnd*0.7); // confidence roughly random
+    if (rnd>60) {
+      direction = "LONG";
+      entryZone = `${fmt(p*0.98)} - ${fmt(p*0.995)}`;
+      stopLoss = fmt(p*0.95);
+      tp1 = fmt(p*1.05); tp2 = fmt(p*1.10); tp3 = fmt(p*1.15); tp4 = fmt(p*1.20);
+      rr = `${fmt((tp2-p)/(p-stopLoss))}`;
+      leverage = "5x";
+    } else if (rnd<30) {
+      direction = "SHORT";
+      entryZone = `${fmt(p*1.005)} - ${fmt(p*1.02)}`;
+      stopLoss = fmt(p*1.03);
+      tp1 = fmt(p*0.97); tp2 = fmt(p*0.94); tp3 = fmt(p*0.91); tp4 = fmt(p*0.88);
+      rr = `${fmt((p-stopLoss)/(tp2-p))}`;
+      leverage = "4x";
+    }
+  }
+  
+  return {symbol, direction, entryZone, stopLoss, tp1, tp2, tp3, tp4, leverage, conf, rr};
+}
+
+// == RENDER ==
+async function render() {
+  document.getElementById("timestamp").innerText = astNow().toISOString().replace("T"," ").split(".")[0] + " AST";
+  
+  let fg = await fetchFearGreedIndex();
+  document.getElementById("fearGreed").innerText = fg !== null ? fg : "N/A";
+  
+  let data = await fetchBinanceData();
+  let tableHTML = "";
+  for (let s of symbols) {
+    let d = data[s];
+    if (!d) continue;
+    tableHTML += `
+      <tr>
+        <td>${s.replace("USDT","")}</td>
+        <td>${fmt(d.price)}</td>
+        <td>${fmt(d.high)}</td>
+        <td>${fmt(d.low)}</td>
+        <td>${fmt(d.vol)}</td>
+        <td>${fmt(d.change)}%</td>
+      </tr>`;
+  }
+  document.getElementById("marketTable").innerHTML = tableHTML;
+  
+  let signalsHTML="", priorityHTML="";
+  let allSignals = [];
+  for (let s of symbols) {
+    let sig = generateSignal(s, data[s]?.price);
+    allSignals.push(sig);
+    signalsHTML += `
+      <div class="signal">
+        <strong>${sig.symbol.replace("USDT","")}</strong> — <em>${sig.direction}</em><br>
+        Entry Zone: ${sig.entryZone}<br>
+        Stop Loss: ${sig.stopLoss}<br>
+        TPs: ${sig.tp1} | ${sig.tp2} | ${sig.tp3} | ${sig.tp4}<br>
+        Leverage: ${sig.leverage}, Confidence: ${sig.conf}%, R/R: ${sig.rr}
+      </div>`;
+  }
+  document.getElementById("signals").innerHTML = signalsHTML;
+  
+  // sort by confidence
+  allSignals.sort((a,b)=>b.conf - a.conf);
+  for (let i=0; i<3 && i<allSignals.length; i++) {
+    let s = allSignals[i];
+    priorityHTML += `<p>#${i+1}: ${s.symbol.replace("USDT","")} — ${s.direction} (${s.conf}%)</p>`;
+  }
+  document.getElementById("priorityTrades").innerHTML = priorityHTML;
+}
+
+render();
+setInterval(render, 60*1000); // refresh each minute
+</script>
+
+</body>
+</html>

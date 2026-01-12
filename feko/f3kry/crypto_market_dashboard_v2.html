@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Binance Futures AI Market Analyst</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body { font-family: Arial, sans-serif; background:#0b0f19; color:#eaeaea; }
+h1,h2,h3 { color:#00eaff; }
+table { width:100%; border-collapse: collapse; margin-bottom:20px; }
+th,td { border:1px solid #222; padding:8px; text-align:center; }
+th { background:#111827; }
+.signal-long { color:#00ff9c; font-weight:bold; }
+.signal-short { color:#ff4d4d; font-weight:bold; }
+.signal-wait { color:#ffd166; font-weight:bold; }
+.box { background:#111827; padding:15px; margin-bottom:20px; border-radius:8px; }
+.small { font-size:12px; color:#aaa; }
+</style>
+</head>
+<body>
+
+<h1>📊 Binance Futures AI Market Analysis</h1>
+<div id="header" class="box"></div>
+
+<div id="marketOverview" class="box"></div>
+
+<h2>📈 Live Futures Signals</h2>
+<div id="coins"></div>
+
+<h2>🔥 Top 3 Priority Trades</h2>
+<div id="topTrades" class="box"></div>
+
+<div class="box small">⚠️ <b>Risk Disclaimer:</b> Futures trading involves substantial risk and may result in the loss of all capital.  
+Signals are AI-assisted, not financial advice. Always manage leverage and risk responsibly.
+</div>
+
+<script>
+const coins = [
+ {s:"BTCUSDT", n:"BTC"},
+ {s:"ETHUSDT", n:"ETH"},
+ {s:"SOLUSDT", n:"SOL"},
+ {s:"BNBUSDT", n:"BNB"},
+ {s:"XRPUSDT", n:"XRP"},
+ {s:"ZECUSDT", n:"ZEC"},
+ {s:"SUIUSDT", n:"SUI"},
+ {s:"AVAXUSDT", n:"AVAX"},
+ {s:"LTCUSDT", n:"LTC"}
+];
+
+function saudiTime() {
+ return new Intl.DateTimeFormat("en-GB", {
+  timeZone: "Asia/Riyadh",
+  dateStyle: "full",
+  timeStyle: "medium"
+ }).format(new Date());
+}
+
+async function fearGreed() {
+ const r = await fetch("https://api.alternative.me/fng/");
+ const d = await r.json();
+ return d.data[0];
+}
+
+function fgInterpret(v){
+ if(v<=25) return "EXTREME FEAR – Aggressive contrarian buying (40–50% capital)";
+ if(v<=45) return "FEAR – Gradual accumulation (55–65%)";
+ if(v<=55) return "NEUTRAL – Balanced exposure (75–90%)";
+ if(v<=75) return "GREED – Reduce risk (40–50%)";
+ return "EXTREME GREED – Heavy profit-taking (20–30%)";
+}
+
+async function ticker(symbol){
+ const r = await fetch(`https://api.binance.com/api/v3/ticker/24hr?symbol=${symbol}`);
+ return await r.json();
+}
+
+function generateSignal(price, high, low){
+ const range = high - low;
+ const mid = low + range * 0.5;
+ let direction = "WAIT";
+
+ if(price > mid * 1.01) direction = "LONG";
+ if(price < mid * 0.99) direction = "SHORT";
+
+ const entryLow = price * (direction==="LONG"?0.995:1.005);
+ const entryHigh = price * (direction==="LONG"?1.002:0.998);
+ const stop = direction==="LONG"? low * 0.99 : high * 1.01;
+
+ const tp1 = direction==="LONG"? price*1.03 : price*0.97;
+ const tp2 = direction==="LONG"? price*1.06 : price*0.94;
+ const tp3 = direction==="LONG"? price*1.10 : price*0.90;
+ const tp4 = direction==="LONG"? price*1.15 : price*0.85;
+
+ const rr = Math.abs((tp2-price)/(price-stop)).toFixed(2);
+ const confidence = Math.min(95, Math.max(60, Math.round(70 + (range/price)*100)));
+
+ return {direction, entryLow, entryHigh, stop, tp1, tp2, tp3, tp4, rr, confidence};
+}
+
+async function load(){
+ const fg = await fearGreed();
+
+ document.getElementById("header").innerHTML = `
+ <b>Date & Time (Saudi Arabia - AST):</b> ${saudiTime()}<br>
+ <b>Fear & Greed Index:</b> ${fg.value} (${fg.value_classification})<br>
+ <b>Interpretation:</b> ${fgInterpret(fg.value)}
+ `;
+
+ let html = `<table>
+ <tr>
+ <th>Coin</th><th>Price</th><th>24h High</th><th>24h Low</th><th>Volume</th>
+ <th>Signal</th><th>Entry Zone</th><th>Stop</th>
+ <th>TP1</th><th>TP2</th><th>TP3</th><th>TP4</th>
+ <th>Leverage</th><th>RR</th><th>Confidence</th>
+ </tr>`;
+
+ let tradeRanks = [];
+
+ for(const c of coins){
+  const d = await ticker(c.s);
+  const price = parseFloat(d.lastPrice);
+  const high = parseFloat(d.highPrice);
+  const low = parseFloat(d.lowPrice);
+
+  const s = generateSignal(price, high, low);
+  const cls = s.direction==="LONG"?"signal-long":s.direction==="SHORT"?"signal-short":"signal-wait";
+
+  html += `
+  <tr>
+   <td>${c.n}</td>
+   <td>${price.toFixed(4)}</td>
+   <td>${high.toFixed(4)}</td>
+   <td>${low.toFixed(4)}</td>
+   <td>${(d.volume/1000).toFixed(2)}K</td>
+   <td class="${cls}">${s.direction}</td>
+   <td>${s.entryLow.toFixed(4)} – ${s.entryHigh.toFixed(4)}</td>
+   <td>${s.stop.toFixed(4)}</td>
+   <td>${s.tp1.toFixed(4)}</td>
+   <td>${s.tp2.toFixed(4)}</td>
+   <td>${s.tp3.toFixed(4)}</td>
+   <td>${s.tp4.toFixed(4)}</td>
+   <td>${s.direction==="WAIT"?"—":"5x–8x"}</td>
+   <td>${s.rr}</td>
+   <td>${s.confidence}%</td>
+  </tr>`;
+
+  if(s.direction!=="WAIT") tradeRanks.push({coin:c.n,...s});
+ }
+
+ html += `</table>`;
+ document.getElementById("coins").innerHTML = html;
+
+ tradeRanks.sort((a,b)=>b.confidence-a.confidence);
+ document.getElementById("topTrades").innerHTML = tradeRanks.slice(0,3).map(t=>`
+ <b>${t.coin}</b> → ${t.direction} | Confidence: ${t.confidence}% | RR: ${t.rr}<br>
+ Entry: ${t.entryLow.toFixed(4)} – ${t.entryHigh.toFixed(4)} | SL: ${t.stop.toFixed(4)}<br><br>
+ `).join("");
+}
+
+load();
+setInterval(load, 60000);
+</script>
+</body>
+</html>
