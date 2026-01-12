@@ -3,1286 +3,936 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Binance Futures Trading Dashboard - Expert Analysis</title>
+    <title>Binance Futures Trading Signals Dashboard</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.3/font/bootstrap-icons.css">
     <style>
         :root {
-            --primary: #1e3a8a;
-            --secondary: #0ea5e9;
+            --primary: #1e40af;
             --success: #10b981;
             --danger: #ef4444;
             --warning: #f59e0b;
-            --dark: #111827;
-            --light: #f8fafc;
-            --gray: #6b7280;
-            --card-bg: #1f2937;
+            --dark: #1f2937;
+            --light: #f9fafb;
         }
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        
         body {
             background-color: #0f172a;
             color: #e2e8f0;
-            line-height: 1.6;
-            padding: 20px;
-            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow-x: hidden;
         }
-        
-        .container {
-            max-width: 1600px;
-            margin: 0 auto;
-        }
-        
-        header {
-            text-align: center;
-            margin-bottom: 30px;
-            padding-bottom: 20px;
+        .header {
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
             border-bottom: 1px solid #334155;
+            padding: 1.5rem 0;
         }
-        
-        .logo {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 15px;
-            margin-bottom: 15px;
-        }
-        
-        .logo i {
-            font-size: 2.5rem;
-            color: #f0b90b;
-        }
-        
-        h1 {
-            color: #f8fafc;
-            font-size: 2.5rem;
-            margin-bottom: 5px;
-        }
-        
-        .subtitle {
-            color: #94a3b8;
-            font-size: 1.1rem;
-            margin-bottom: 20px;
-        }
-        
-        .dashboard-header {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-        
-        .info-card {
-            background-color: var(--card-bg);
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-            border-left: 4px solid var(--secondary);
-        }
-        
-        .info-card.fear-greed {
-            border-left-color: #f59e0b;
-        }
-        
-        .info-card.market-overview {
-            border-left-color: #10b981;
-        }
-        
-        .info-card.time-display {
-            border-left-color: #8b5cf6;
-        }
-        
-        .card-title {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 15px;
-            color: #cbd5e1;
-            font-size: 1.2rem;
-        }
-        
-        .card-title i {
-            font-size: 1.4rem;
-        }
-        
-        .fear-greed-value {
-            font-size: 2.8rem;
-            font-weight: bold;
-            text-align: center;
-            margin: 15px 0;
-        }
-        
-        .fear-greed-scale {
-            height: 20px;
-            background: linear-gradient(to right, #10b981, #f59e0b, #ef4444);
+        .card {
+            background-color: #1e293b;
+            border: 1px solid #334155;
             border-radius: 10px;
-            margin-bottom: 10px;
-            position: relative;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 1.5rem;
         }
-        
-        .fear-greed-indicator {
-            position: absolute;
-            top: -5px;
-            width: 6px;
-            height: 30px;
-            background-color: white;
-            border-radius: 3px;
-            transform: translateX(-50%);
+        .card-header {
+            background-color: #1e293b;
+            border-bottom: 1px solid #334155;
+            padding: 1rem 1.25rem;
         }
-        
-        .market-stats {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-top: 15px;
-        }
-        
-        .market-stat {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px solid #374151;
-        }
-        
-        .market-stat:last-child {
-            border-bottom: none;
-        }
-        
-        .time-display {
-            font-size: 2rem;
-            font-weight: bold;
-            text-align: center;
-            margin: 10px 0;
-            color: #60a5fa;
-        }
-        
-        .time-label {
-            font-size: 1.1rem;
-            color: #94a3b8;
-            text-align: center;
-        }
-        
-        .market-news {
-            background-color: var(--card-bg);
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 30px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-            border-left: 4px solid #ec4899;
-        }
-        
-        .news-title {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 15px;
-            color: #cbd5e1;
-            font-size: 1.2rem;
-        }
-        
-        .news-item {
-            padding: 12px;
-            background-color: #374151;
-            border-radius: 8px;
-            margin-bottom: 10px;
-            border-left: 4px solid #8b5cf6;
-        }
-        
-        .news-item:last-child {
+        .table {
+            color: #e2e8f0;
             margin-bottom: 0;
         }
-        
-        .news-time {
-            font-size: 0.85rem;
-            color: #94a3b8;
-            margin-bottom: 5px;
+        .table-dark {
+            --bs-table-bg: #1e293b;
+            --bs-table-striped-bg: #1a2332;
+            --bs-table-striped-color: #e2e8f0;
+            --bs-table-active-bg: #2d3748;
+            --bs-table-hover-bg: #2d3748;
         }
-        
-        .coin-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-            gap: 25px;
-            margin-bottom: 30px;
-        }
-        
-        .coin-card {
-            background-color: var(--card-bg);
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-            transition: transform 0.3s ease;
-        }
-        
-        .coin-card:hover {
-            transform: translateY(-5px);
-        }
-        
-        .coin-header {
-            padding: 20px;
-            border-bottom: 1px solid #374151;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .coin-info {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-        
-        .coin-icon {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            background-color: #374151;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-        }
-        
-        .coin-name {
-            font-size: 1.4rem;
-            font-weight: bold;
-        }
-        
-        .coin-symbol {
-            color: #94a3b8;
-            font-size: 1rem;
-        }
-        
-        .coin-price {
-            font-size: 1.8rem;
-            font-weight: bold;
-        }
-        
-        .price-change {
-            font-size: 1rem;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-weight: bold;
-        }
-        
-        .positive {
-            color: #10b981;
+        .bg-success-light {
             background-color: rgba(16, 185, 129, 0.1);
         }
-        
-        .negative {
-            color: #ef4444;
+        .bg-danger-light {
             background-color: rgba(239, 68, 68, 0.1);
         }
-        
-        .coin-details {
-            padding: 20px;
+        .bg-warning-light {
+            background-color: rgba(245, 158, 11, 0.1);
         }
-        
-        .coin-stats {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-        
-        .coin-stat {
-            display: flex;
-            flex-direction: column;
-        }
-        
-        .stat-label {
-            font-size: 0.9rem;
-            color: #94a3b8;
-            margin-bottom: 5px;
-        }
-        
-        .stat-value {
-            font-size: 1.1rem;
-            font-weight: 600;
-        }
-        
-        .signal-section {
-            background-color: #111827;
-            padding: 20px;
-            border-radius: 10px;
-            margin-top: 15px;
-        }
-        
-        .signal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-        
-        .signal-direction {
-            padding: 8px 20px;
-            border-radius: 20px;
-            font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        
-        .long {
-            background-color: rgba(16, 185, 129, 0.2);
+        .signal-long {
             color: #10b981;
-            border: 1px solid #10b981;
+            font-weight: bold;
         }
-        
-        .short {
-            background-color: rgba(239, 68, 68, 0.2);
+        .signal-short {
             color: #ef4444;
-            border: 1px solid #ef4444;
+            font-weight: bold;
         }
-        
-        .wait {
-            background-color: rgba(245, 158, 11, 0.2);
+        .signal-wait {
             color: #f59e0b;
-            border: 1px solid #f59e0b;
-        }
-        
-        .skip {
-            background-color: rgba(107, 114, 128, 0.2);
-            color: #6b7280;
-            border: 1px solid #6b7280;
-        }
-        
-        .confidence {
             font-weight: bold;
-            font-size: 1.2rem;
         }
-        
-        .signal-details {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-        
-        .signal-param {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px solid #374151;
-        }
-        
-        .signal-param:last-child {
-            border-bottom: none;
-        }
-        
-        .param-label {
+        .signal-skip {
             color: #94a3b8;
-        }
-        
-        .param-value {
-            font-weight: 600;
-        }
-        
-        .tp-levels {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 15px;
-        }
-        
-        .tp-level {
-            text-align: center;
-            flex: 1;
-            padding: 10px;
-            background-color: #1f2937;
-            margin: 0 5px;
-            border-radius: 8px;
-        }
-        
-        .tp-level:first-child {
-            margin-left: 0;
-        }
-        
-        .tp-level:last-child {
-            margin-right: 0;
-        }
-        
-        .tp-label {
-            font-size: 0.9rem;
-            color: #94a3b8;
-            margin-bottom: 5px;
-        }
-        
-        .tp-value {
             font-weight: bold;
-            color: #10b981;
         }
-        
-        .top-trades {
-            background-color: var(--card-bg);
-            border-radius: 12px;
-            padding: 25px;
-            margin-bottom: 30px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-            border-left: 4px solid #f59e0b;
-        }
-        
-        .section-title {
-            font-size: 1.5rem;
-            margin-bottom: 20px;
-            color: #f8fafc;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .top-trades-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-        }
-        
-        .top-trade-card {
-            background-color: #111827;
-            padding: 20px;
-            border-radius: 10px;
-            border: 1px solid #374151;
-        }
-        
-        .trade-rank {
-            display: inline-block;
-            width: 30px;
-            height: 30px;
-            background-color: #0ea5e9;
-            color: white;
-            border-radius: 50%;
-            text-align: center;
-            line-height: 30px;
+        .fear-greed {
             font-weight: bold;
-            margin-bottom: 15px;
-        }
-        
-        .risk-management {
-            background-color: var(--card-bg);
-            border-radius: 12px;
-            padding: 25px;
-            margin-bottom: 30px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-            border-left: 4px solid #ef4444;
-        }
-        
-        .risk-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-        }
-        
-        .risk-card {
-            background-color: #111827;
-            padding: 20px;
-            border-radius: 10px;
-            border: 1px solid #374151;
-        }
-        
-        .risk-title {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 15px;
-            color: #cbd5e1;
             font-size: 1.1rem;
         }
-        
-        .capital-allocation {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
+        .fear-greed-0-25 { color: #3b82f6; }
+        .fear-greed-26-45 { color: #60a5fa; }
+        .fear-greed-46-55 { color: #9ca3af; }
+        .fear-greed-56-75 { color: #fbbf24; }
+        .fear-greed-76-100 { color: #f87171; }
+        .progress {
+            height: 20px;
+            background-color: #334155;
         }
-        
-        .allocation-bar {
-            height: 10px;
-            background-color: #374151;
-            border-radius: 5px;
-            flex-grow: 1;
-            margin: 0 15px;
-            overflow: hidden;
+        .progress-bar {
+            background: linear-gradient(90deg, #3b82f6, #10b981, #fbbf24, #ef4444);
         }
-        
-        .allocation-fill {
-            height: 100%;
-            border-radius: 5px;
+        .coin-icon {
+            width: 24px;
+            height: 24px;
+            margin-right: 8px;
+            border-radius: 50%;
         }
-        
-        .allocation-0-25 { background-color: #ef4444; width: 25%; }
-        .allocation-26-45 { background-color: #f59e0b; width: 45%; }
-        .allocation-46-55 { background-color: #84cc16; width: 55%; }
-        .allocation-56-75 { background-color: #22c55e; width: 75%; }
-        .allocation-76-100 { background-color: #10b981; width: 90%; }
-        
-        footer {
+        .badge {
+            font-weight: 500;
+            padding: 0.4em 0.8em;
+        }
+        .price-up {
+            color: #10b981;
+        }
+        .price-down {
+            color: #ef4444;
+        }
+        .spinner-border {
+            width: 1rem;
+            height: 1rem;
+            border-width: 0.15em;
+        }
+        .loading {
             text-align: center;
-            padding: 20px;
+            padding: 2rem;
             color: #94a3b8;
-            font-size: 0.9rem;
-            border-top: 1px solid #334155;
-            margin-top: 30px;
         }
-        
-        .disclaimer {
-            font-size: 0.8rem;
-            color: #6b7280;
-            margin-top: 10px;
-            line-height: 1.4;
+        .news-item {
+            border-left: 3px solid #3b82f6;
+            padding-left: 1rem;
+            margin-bottom: 1rem;
         }
-        
-        .refresh-btn {
-            background-color: var(--secondary);
+        .session-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+        .session-active {
+            background-color: #10b981;
+            box-shadow: 0 0 8px #10b981;
+        }
+        .session-inactive {
+            background-color: #6b7280;
+        }
+        .leverage-badge {
+            background-color: #3b82f6;
             color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 8px;
-            font-weight: bold;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin: 0 auto 20px;
-            transition: background-color 0.3s;
         }
-        
-        .refresh-btn:hover {
-            background-color: #0284c7;
+        .confidence-high { color: #10b981; }
+        .confidence-medium { color: #f59e0b; }
+        .confidence-low { color: #ef4444; }
+        .update-time {
+            font-size: 0.85rem;
+            color: #94a3b8;
         }
-        
-        @media (max-width: 1200px) {
-            .coin-grid {
-                grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            }
+        .hover-effect:hover {
+            transform: translateY(-2px);
+            transition: transform 0.2s;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
         }
-        
         @media (max-width: 768px) {
-            .dashboard-header {
-                grid-template-columns: 1fr;
+            .table-responsive {
+                font-size: 0.85rem;
             }
-            
-            .coin-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .signal-details {
-                grid-template-columns: 1fr;
-            }
-            
-            .coin-stats {
-                grid-template-columns: 1fr;
-            }
-            
-            .time-display {
-                font-size: 1.5rem;
+            .card-header h5 {
+                font-size: 1rem;
             }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <div class="logo">
-                <i class="fas fa-chart-line"></i>
-                <div>
-                    <h1>Binance Futures Trading Dashboard</h1>
-                    <div class="subtitle">Expert Cryptocurrency Analysis & Trading Signals - Saudi Arabia Time (AST)</div>
+    <!-- Header Section -->
+    <header class="header">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <h1 class="mb-2"><i class="fas fa-chart-line text-primary"></i> Binance Futures Trading Signals</h1>
+                    <p class="text-light mb-0">Expert cryptocurrency futures analysis with real-time signals</p>
                 </div>
-            </div>
-        </header>
-        
-        <button class="refresh-btn" id="refreshData">
-            <i class="fas fa-sync-alt"></i> Refresh Market Data
-        </button>
-        
-        <div class="dashboard-header">
-            <div class="info-card fear-greed">
-                <div class="card-title">
-                    <i class="fas fa-brain"></i>
-                    <span>Fear & Greed Index</span>
-                </div>
-                <div class="fear-greed-value" id="fearGreedValue">68</div>
-                <div class="fear-greed-scale">
-                    <div class="fear-greed-indicator" id="fearGreedIndicator" style="left: 68%;"></div>
-                </div>
-                <div style="display: flex; justify-content: space-between; font-size: 0.9rem; color: #94a3b8;">
-                    <span>Extreme Fear</span>
-                    <span>Neutral</span>
-                    <span>Extreme Greed</span>
-                </div>
-                <div id="fearGreedText" style="text-align: center; margin-top: 15px; font-weight: 600; color: #f59e0b;">GREED - Take profits, reduce to 40-50% capital</div>
-            </div>
-            
-            <div class="info-card market-overview">
-                <div class="card-title">
-                    <i class="fas fa-globe"></i>
-                    <span>Market Overview</span>
-                </div>
-                <div class="market-stats">
-                    <div class="market-stat">
-                        <span>Total Market Cap:</span>
-                        <span id="marketCap">$2.36T</span>
+                <div class="col-md-6 text-md-end">
+                    <div class="d-inline-block me-4">
+                        <div id="saudi-time" class="h5 mb-1">Loading Saudi Time...</div>
+                        <div id="update-status" class="update-time">Last update: <span id="last-update">--:--:--</span></div>
                     </div>
-                    <div class="market-stat">
-                        <span>24h Volume:</span>
-                        <span id="marketVolume">$84.2B</span>
-                    </div>
-                    <div class="market-stat">
-                        <span>BTC Dominance:</span>
-                        <span id="btcDominance">52.4%</span>
-                    </div>
-                    <div class="market-stat">
-                        <span>Market Sentiment:</span>
-                        <span id="marketSentiment" style="color: #f59e0b;">Bullish</span>
-                    </div>
-                </div>
-                <div style="margin-top: 20px; font-size: 0.9rem; color: #94a3b8;">
-                    <i class="fas fa-info-circle"></i> Based on current Fear & Greed Index, deploy <strong>40-50%</strong> of capital
-                </div>
-            </div>
-            
-            <div class="info-card time-display">
-                <div class="card-title">
-                    <i class="fas fa-clock"></i>
-                    <span>Saudi Arabia Time (AST)</span>
-                </div>
-                <div class="time-display" id="saudiTime">00:00:00</div>
-                <div class="time-label" id="saudiDate">January 1, 2024</div>
-                <div style="margin-top: 20px; text-align: center; font-size: 0.9rem; color: #94a3b8;">
-                    <i class="fas fa-exchange-alt"></i> Market Sessions: 
-                    <span id="marketSession" style="color: #f59e0b; font-weight: 600;">Asian Session (Active)</span>
+                    <button id="refresh-btn" class="btn btn-primary">
+                        <i class="fas fa-sync-alt"></i> Refresh Data
+                    </button>
                 </div>
             </div>
         </div>
-        
-        <div class="market-news">
-            <div class="news-title">
-                <i class="fas fa-newspaper"></i>
-                <span>Market News & Events</span>
-            </div>
-            <div class="news-item">
-                <div class="news-time">2 hours ago</div>
-                <div>Federal Reserve officials signal caution on interest rate cuts despite cooling inflation data.</div>
-            </div>
-            <div class="news-item">
-                <div class="news-time">5 hours ago</div>
-                <div>Bitcoin ETF inflows continue for 7th consecutive day, adding 12,400 BTC this week.</div>
-            </div>
-            <div class="news-item">
-                <div class="news-time">1 day ago</div>
-                <div>Ethereum Foundation announces timeline for next major network upgrade "Prague".</div>
-            </div>
-        </div>
-        
-        <h2 class="section-title">
-            <i class="fas fa-coins"></i>
-            <span>Individual Coin Analysis & Trading Signals</span>
-        </h2>
-        
-        <div class="coin-grid" id="coinGrid">
-            <!-- Coin cards will be dynamically generated here -->
-        </div>
-        
-        <div class="top-trades">
-            <h2 class="section-title">
-                <i class="fas fa-star"></i>
-                <span>Top 3 Priority Trades</span>
-            </h2>
-            <div class="top-trades-grid">
-                <div class="top-trade-card">
-                    <div class="trade-rank">1</div>
-                    <h3 style="margin-bottom: 10px;">BTC/USDT Futures</h3>
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
-                        <div>
-                            <div style="color: #94a3b8; font-size: 0.9rem;">Direction</div>
-                            <div class="signal-direction long" style="display: inline-block; margin-top: 5px;">LONG</div>
-                        </div>
-                        <div>
-                            <div style="color: #94a3b8; font-size: 0.9rem;">Confidence</div>
-                            <div class="confidence" style="color: #10b981; margin-top: 5px;">85%</div>
-                        </div>
-                    </div>
-                    <div style="font-size: 0.9rem; color: #cbd5e1;">
-                        Key resistance break at $68,500 with strong volume. Bullish MACD crossover on 4H chart.
-                    </div>
-                </div>
-                
-                <div class="top-trade-card">
-                    <div class="trade-rank">2</div>
-                    <h3 style="margin-bottom: 10px;">ETH/USDT Futures</h3>
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
-                        <div>
-                            <div style="color: #94a3b8; font-size: 0.9rem;">Direction</div>
-                            <div class="signal-direction long" style="display: inline-block; margin-top: 5px;">LONG</div>
-                        </div>
-                        <div>
-                            <div style="color: #94a3b8; font-size: 0.9rem;">Confidence</div>
-                            <div class="confidence" style="color: #10b981; margin-top: 5px;">78%</div>
-                        </div>
-                    </div>
-                    <div style="font-size: 0.9rem; color: #cbd5e1;">
-                        Testing key support at $3,450. Bullish divergence on RSI suggests potential reversal.
-                    </div>
-                </div>
-                
-                <div class="top-trade-card">
-                    <div class="trade-rank">3</div>
-                    <h3 style="margin-bottom: 10px;">SOL/USDT Futures</h3>
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
-                        <div>
-                            <div style="color: #94a3b8; font-size: 0.9rem;">Direction</div>
-                            <div class="signal-direction short" style="display: inline-block; margin-top: 5px;">SHORT</div>
-                        </div>
-                        <div>
-                            <div style="color: #94a3b8; font-size: 0.9rem;">Confidence</div>
-                            <div class="confidence" style="color: #ef4444; margin-top: 5px;">72%</div>
-                        </div>
-                    </div>
-                    <div style="font-size: 0.9rem; color: #cbd5e1;">
-                        Rejection at $180 resistance with decreasing volume. Bearish wedge pattern forming on daily.
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="risk-management">
-            <h2 class="section-title">
-                <i class="fas fa-shield-alt"></i>
-                <span>Risk Management Guidelines</span>
-            </h2>
-            <div class="risk-grid">
-                <div class="risk-card">
-                    <div class="risk-title">
-                        <i class="fas fa-money-bill-wave"></i>
-                        <span>Capital Allocation</span>
-                    </div>
-                    <div class="capital-allocation">
-                        <span>Extreme Fear</span>
-                        <div class="allocation-bar">
-                            <div class="allocation-fill allocation-0-25"></div>
-                        </div>
-                        <span>40-50%</span>
-                    </div>
-                    <div class="capital-allocation">
-                        <span>Fear</span>
-                        <div class="allocation-bar">
-                            <div class="allocation-fill allocation-26-45"></div>
-                        </div>
-                        <span>55-65%</span>
-                    </div>
-                    <div class="capital-allocation">
-                        <span>Neutral</span>
-                        <div class="allocation-bar">
-                            <div class="allocation-fill allocation-46-55"></div>
-                        </div>
-                        <span>75-90%</span>
-                    </div>
-                    <div class="capital-allocation">
-                        <span>Greed</span>
-                        <div class="allocation-bar">
-                            <div class="allocation-fill allocation-56-75"></div>
-                        </div>
-                        <span>40-50%</span>
-                    </div>
-                    <div class="capital-allocation">
-                        <span>Extreme Greed</span>
-                        <div class="allocation-bar">
-                            <div class="allocation-fill allocation-76-100"></div>
-                        </div>
-                        <span>20-30%</span>
-                    </div>
-                </div>
-                
-                <div class="risk-card">
-                    <div class="risk-title">
-                        <i class="fas fa-exclamation-triangle"></i>
-                        <span>Position Sizing Rules</span>
-                    </div>
-                    <ul style="padding-left: 20px; color: #cbd5e1;">
-                        <li>Never risk more than 2% of total capital on a single trade</li>
-                        <li>Use stop losses on ALL positions (5-15% from entry)</li>
-                        <li>Scale into positions: 50% at entry, 30% at confirmation, 20% at pullback</li>
-                        <li>Maximum portfolio exposure: 30% during high volatility</li>
-                        <li>Reduce position size by 50% during major news events</li>
-                    </ul>
-                </div>
-                
-                <div class="risk-card">
-                    <div class="risk-title">
-                        <i class="fas fa-calendar-alt"></i>
-                        <span>Market Session Awareness</span>
-                    </div>
-                    <div style="margin-bottom: 15px;">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                            <span>Asian Session (00:00-08:00 UTC)</span>
-                            <span style="color: #10b981; font-weight: 600;">Active</span>
-                        </div>
-                        <div style="font-size: 0.9rem; color: #94a3b8;">Lower volatility, accumulation phase</div>
-                    </div>
-                    <div style="margin-bottom: 15px;">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                            <span>European Session (08:00-16:00 UTC)</span>
-                            <span style="color: #f59e0b;">Starting</span>
-                        </div>
-                        <div style="font-size: 0.9rem; color: #94a3b8;">Increasing volume, potential breakouts</div>
-                    </div>
-                    <div>
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                            <span>US Session (16:00-24:00 UTC)</span>
-                            <span style="color: #6b7280;">Inactive</span>
-                        </div>
-                        <div style="font-size: 0.9rem; color: #94a3b8;">Highest volatility, news-driven moves</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <footer>
-            <p>Binance Futures Trading Dashboard &copy; 2024 - Expert Cryptocurrency Analysis</p>
-            <p class="disclaimer">
-                Disclaimer: This dashboard provides analysis and trading signals for informational purposes only. 
-                Cryptocurrency trading involves significant risk. Always conduct your own research and consult with 
-                a qualified financial advisor before making any investment decisions. Past performance is not indicative 
-                of future results.
-            </p>
-        </footer>
-    </div>
+    </header>
 
-    <script>
-        // Initialize Saudi Arabia time display
-        function updateSaudiTime() {
-            const now = new Date();
-            const saudiTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Riyadh"}));
-            
-            const timeStr = saudiTime.toLocaleTimeString('en-US', {hour12: false});
-            const dateStr = saudiTime.toLocaleDateString('en-US', {
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-            });
-            
-            document.getElementById('saudiTime').textContent = timeStr;
-            document.getElementById('saudiDate').textContent = dateStr;
-            
-            // Update market session
-            const utcHour = saudiTime.getUTCHours();
-            let session = "Asian Session";
-            let sessionStatus = "Active";
-            let sessionColor = "#10b981";
-            
-            if (utcHour >= 8 && utcHour < 16) {
-                session = "European Session";
-                sessionStatus = "Active";
-                sessionColor = "#f59e0b";
-            } else if (utcHour >= 16) {
-                session = "US Session";
-                sessionStatus = "Active";
-                sessionColor = "#ef4444";
-            } else if (utcHour >= 0 && utcHour < 8) {
-                session = "Asian Session";
-                sessionStatus = "Active";
-                sessionColor = "#10b981";
-            }
-            
-            document.getElementById('marketSession').textContent = `${session} (${sessionStatus})`;
-            document.getElementById('marketSession').style.color = sessionColor;
-        }
-        
-        // Initialize Fear & Greed Index
-        function updateFearGreedIndex() {
-            // In a real implementation, this would fetch from an API
-            // For demo, we'll use a random value between 40-80
-            const fgValue = Math.floor(Math.random() * 20) + 60; // 60-80
-            document.getElementById('fearGreedValue').textContent = fgValue;
-            document.getElementById('fearGreedIndicator').style.left = `${fgValue}%`;
-            
-            let fgText = "";
-            let fgColor = "";
-            
-            if (fgValue <= 25) {
-                fgText = "EXTREME FEAR - Maximum contrarian buy opportunity, deploy 40-50% capital";
-                fgColor = "#ef4444";
-            } else if (fgValue <= 45) {
-                fgText = "FEAR - Gradual accumulation, deploy 55-65% capital";
-                fgColor = "#f59e0b";
-            } else if (fgValue <= 55) {
-                fgText = "NEUTRAL - Balanced approach, deploy 75-90% capital";
-                fgColor = "#84cc16";
-            } else if (fgValue <= 75) {
-                fgText = "GREED - Take profits, reduce to 40-50% capital";
-                fgColor = "#f59e0b";
-            } else {
-                fgText = "EXTREME GREED - Heavy selling, reduce to 20-30% capital";
-                fgColor = "#10b981";
-            }
-            
-            document.getElementById('fearGreedText').textContent = fgText;
-            document.getElementById('fearGreedText').style.color = fgColor;
-        }
-        
-        // Coin data and trading signals
-        const coins = [
-            {
-                symbol: "BTC",
-                name: "Bitcoin",
-                price: "68,742.50",
-                change: 2.34,
-                high24h: "69,120.00",
-                low24h: "67,450.00",
-                volume: "32.4B",
-                direction: "LONG",
-                entry: "68,200 - 68,600",
-                stopLoss: "66,800",
-                tp1: "69,500",
-                tp2: "70,800",
-                tp3: "72,200",
-                tp4: "74,000",
-                leverage: "5x",
-                confidence: 85,
-                rrRatio: "1:3.2",
-                reasoning: "Breaking key resistance at $68,500 with strong volume. Bullish MACD crossover on 4H chart. Institutional inflows increasing."
-            },
-            {
-                symbol: "ETH",
-                name: "Ethereum",
-                price: "3,652.80",
-                change: 1.87,
-                high24h: "3,680.50",
-                low24h: "3,580.20",
-                volume: "14.8B",
-                direction: "LONG",
-                entry: "3,620 - 3,650",
-                stopLoss: "3,520",
-                tp1: "3,720",
-                tp2: "3,820",
-                tp3: "3,950",
-                tp4: "4,100",
-                leverage: "6x",
-                confidence: 78,
-                rrRatio: "1:3.0",
-                reasoning: "Testing key support at $3,450. Bullish divergence on RSI suggests potential reversal. Strong fundamentals with upcoming network upgrades."
-            },
-            {
-                symbol: "SOL",
-                name: "Solana",
-                price: "176.42",
-                change: -1.25,
-                high24h: "182.50",
-                low24h: "174.30",
-                volume: "3.2B",
-                direction: "SHORT",
-                entry: "178 - 180",
-                stopLoss: "185",
-                tp1: "172",
-                tp2: "168",
-                tp3: "162",
-                tp4: "155",
-                leverage: "8x",
-                confidence: 72,
-                rrRatio: "1:2.8",
-                reasoning: "Rejection at $180 resistance with decreasing volume. Bearish wedge pattern forming on daily. Network congestion concerns affecting sentiment."
-            },
-            {
-                symbol: "BNB",
-                name: "Binance Coin",
-                price: "585.30",
-                change: 0.92,
-                high24h: "592.40",
-                low24h: "578.90",
-                volume: "1.8B",
-                direction: "WAIT",
-                entry: "580 - 590",
-                stopLoss: "565",
-                tp1: "605",
-                tp2: "625",
-                tp3: "650",
-                tp4: "680",
-                leverage: "4x",
-                confidence: 65,
-                rrRatio: "1:2.5",
-                reasoning: "Consolidating in a tight range. Awaiting breakout above $595 or breakdown below $575 for clear direction. Low volatility suggests accumulation phase."
-            },
-            {
-                symbol: "XRP",
-                name: "Ripple",
-                price: "0.5248",
-                change: 0.45,
-                high24h: "0.5280",
-                low24h: "0.5180",
-                volume: "1.2B",
-                direction: "LONG",
-                entry: "0.520 - 0.525",
-                stopLoss: "0.508",
-                tp1: "0.535",
-                tp2: "0.550",
-                tp3: "0.570",
-                tp4: "0.595",
-                leverage: "7x",
-                confidence: 70,
-                rrRatio: "1:3.5",
-                reasoning: "Bouncing from key support at $0.518. Positive legal developments could catalyze move. Volume increasing on upticks."
-            },
-            {
-                symbol: "ZEC",
-                name: "Zcash",
-                price: "32.15",
-                change: 3.22,
-                high24h: "32.80",
-                low24h: "30.90",
-                volume: "280M",
-                direction: "LONG",
-                entry: "31.5 - 32.0",
-                stopLoss: "30.2",
-                tp1: "33.2",
-                tp2: "34.8",
-                tp3: "36.5",
-                tp4: "38.5",
-                leverage: "10x",
-                confidence: 68,
-                rrRatio: "1:4.0",
-                reasoning: "Breaking out of descending channel. Privacy coins gaining attention amid regulatory discussions. High volatility provides good swing opportunities."
-            },
-            {
-                symbol: "SUI",
-                name: "Sui Network",
-                price: "1.2450",
-                change: 4.56,
-                high24h: "1.2650",
-                low24h: "1.1800",
-                volume: "420M",
-                direction: "LONG",
-                entry: "1.22 - 1.25",
-                stopLoss: "1.15",
-                tp1: "1.30",
-                tp2: "1.38",
-                tp3: "1.48",
-                tp4: "1.60",
-                leverage: "8x",
-                confidence: 75,
-                rrRatio: "1:3.8",
-                reasoning: "Strong uptrend with increasing development activity. Breaking above key resistance at $1.25. Ecosystem growth accelerating."
-            },
-            {
-                symbol: "AVAX",
-                name: "Avalanche",
-                price: "36.82",
-                change: -0.85,
-                high24h: "37.50",
-                low24h: "36.20",
-                volume: "680M",
-                direction: "SKIP",
-                entry: "36.5 - 37.2",
-                stopLoss: "35.0",
-                tp1: "38.5",
-                tp2: "40.0",
-                tp3: "42.0",
-                tp4: "44.5",
-                leverage: "5x",
-                confidence: 55,
-                rrRatio: "1:2.2",
-                reasoning: "Consolidating without clear direction. Wait for breakout above $38 or breakdown below $35.5. Current risk/reward not favorable."
-            },
-            {
-                symbol: "LTC",
-                name: "Litecoin",
-                price: "82.65",
-                change: 1.23,
-                high24h: "83.40",
-                low24h: "81.20",
-                volume: "540M",
-                direction: "LONG",
-                entry: "81.5 - 82.5",
-                stopLoss: "79.0",
-                tp1: "84.5",
-                tp2: "87.0",
-                tp3: "90.0",
-                tp4: "94.0",
-                leverage: "6x",
-                confidence: 73,
-                rrRatio: "1:3.0",
-                reasoning: "Testing resistance at $83.40 after successful bounce from support. Bullish divergence on hourly chart. Mining activity increasing."
-            }
-        ];
-        
-        // Generate coin cards
-        function generateCoinCards() {
-            const coinGrid = document.getElementById('coinGrid');
-            coinGrid.innerHTML = '';
-            
-            coins.forEach(coin => {
-                const changeClass = coin.change >= 0 ? 'positive' : 'negative';
-                const changeSign = coin.change >= 0 ? '+' : '';
-                const directionClass = coin.direction.toLowerCase();
-                
-                const coinCard = document.createElement('div');
-                coinCard.className = 'coin-card';
-                coinCard.innerHTML = `
-                    <div class="coin-header">
-                        <div class="coin-info">
-                            <div class="coin-icon">
-                                <i class="fab fa-${coin.symbol.toLowerCase()}"></i>
+    <!-- Main Dashboard -->
+    <main class="container py-4">
+        <!-- Fear & Greed Index & Market Overview -->
+        <div class="row mb-4">
+            <div class="col-lg-4">
+                <div class="card hover-effect">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-brain text-warning"></i> Fear & Greed Index</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="text-center mb-3">
+                            <div class="fear-greed fear-greed-46-55 mb-2" id="fear-greed-value">Loading...</div>
+                            <div class="progress mb-3">
+                                <div id="fear-greed-bar" class="progress-bar" style="width: 50%"></div>
                             </div>
-                            <div>
-                                <div class="coin-name">${coin.name}</div>
-                                <div class="coin-symbol">${coin.symbol}/USDT</div>
+                            <div id="fear-greed-text" class="mb-3">Calculating market sentiment...</div>
+                            <div id="capital-allocation" class="alert alert-info py-2">
+                                <strong>Capital Allocation:</strong> <span id="allocation-value">--%</span>
                             </div>
-                        </div>
-                        <div style="text-align: right;">
-                            <div class="coin-price">$${coin.price}</div>
-                            <div class="price-change ${changeClass}">${changeSign}${coin.change}%</div>
                         </div>
                     </div>
-                    
-                    <div class="coin-details">
-                        <div class="coin-stats">
-                            <div class="coin-stat">
-                                <div class="stat-label">24h High</div>
-                                <div class="stat-value">$${coin.high24h}</div>
+                </div>
+            </div>
+            
+            <div class="col-lg-8">
+                <div class="card hover-effect">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-globe text-info"></i> Market Overview</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-primary bg-opacity-10 p-3 rounded me-3">
+                                        <i class="fas fa-bitcoin fa-2x text-primary"></i>
+                                    </div>
+                                    <div>
+                                        <div class="text-muted small">BTC Dominance</div>
+                                        <div class="h4 mb-0" id="btc-dominance">--%</div>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="coin-stat">
-                                <div class="stat-label">24h Low</div>
-                                <div class="stat-value">$${coin.low24h}</div>
+                            <div class="col-md-4 mb-3">
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-success bg-opacity-10 p-3 rounded me-3">
+                                        <i class="fas fa-chart-bar fa-2x text-success"></i>
+                                    </div>
+                                    <div>
+                                        <div class="text-muted small">Total Market Cap</div>
+                                        <div class="h4 mb-0" id="market-cap">--</div>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="coin-stat">
-                                <div class="stat-label">24h Volume</div>
-                                <div class="stat-value">${coin.volume}</div>
-                            </div>
-                            <div class="coin-stat">
-                                <div class="stat-label">Signal Timeframe</div>
-                                <div class="stat-value">${coin.symbol === 'BTC' || coin.symbol === 'ETH' ? 'Swing (1-4 weeks)' : 'Scalping (1-3 days)'}</div>
+                            <div class="col-md-4 mb-3">
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-warning bg-opacity-10 p-3 rounded me-3">
+                                        <i class="fas fa-exchange-alt fa-2x text-warning"></i>
+                                    </div>
+                                    <div>
+                                        <div class="text-muted small">24h Volume</div>
+                                        <div class="h4 mb-0" id="market-volume">--</div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         
-                        <div class="signal-section">
-                            <div class="signal-header">
-                                <div class="signal-direction ${directionClass}">${coin.direction}</div>
-                                <div class="confidence">Confidence: ${coin.confidence}%</div>
-                            </div>
-                            
-                            <div class="signal-details">
-                                <div class="signal-param">
-                                    <span class="param-label">Entry Zone:</span>
-                                    <span class="param-value">$${coin.entry}</span>
+                        <!-- Market Sessions -->
+                        <div class="mt-3">
+                            <h6><i class="fas fa-clock text-info"></i> Market Sessions</h6>
+                            <div class="row">
+                                <div class="col-6 col-md-3">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <span class="session-indicator session-active"></span>
+                                        <span>Asian</span>
+                                    </div>
                                 </div>
-                                <div class="signal-param">
-                                    <span class="param-label">Stop Loss:</span>
-                                    <span class="param-value">$${coin.stopLoss}</span>
+                                <div class="col-6 col-md-3">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <span class="session-indicator session-inactive"></span>
+                                        <span>European</span>
+                                    </div>
                                 </div>
-                                <div class="signal-param">
-                                    <span class="param-label">Leverage:</span>
-                                    <span class="param-value">${coin.leverage}</span>
+                                <div class="col-6 col-md-3">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <span class="session-indicator session-inactive"></span>
+                                        <span>US</span>
+                                    </div>
                                 </div>
-                                <div class="signal-param">
-                                    <span class="param-label">Risk/Reward:</span>
-                                    <span class="param-value">${coin.rrRatio}</span>
+                                <div class="col-6 col-md-3">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <span class="session-indicator session-active"></span>
+                                        <span>Crypto (24/7)</span>
+                                    </div>
                                 </div>
-                            </div>
-                            
-                            <div class="tp-levels">
-                                <div class="tp-level">
-                                    <div class="tp-label">TP1 (25%)</div>
-                                    <div class="tp-value">$${coin.tp1}</div>
-                                </div>
-                                <div class="tp-level">
-                                    <div class="tp-label">TP2 (30%)</div>
-                                    <div class="tp-value">$${coin.tp2}</div>
-                                </div>
-                                <div class="tp-level">
-                                    <div class="tp-label">TP3 (25%)</div>
-                                    <div class="tp-value">$${coin.tp3}</div>
-                                </div>
-                                <div class="tp-level">
-                                    <div class="tp-label">TP4 (20%)</div>
-                                    <div class="tp-value">$${coin.tp4}</div>
-                                </div>
-                            </div>
-                            
-                            <div style="margin-top: 15px; font-size: 0.9rem; color: #cbd5e1;">
-                                <strong>Reasoning:</strong> ${coin.reasoning}
                             </div>
                         </div>
                     </div>
-                `;
+                </div>
+            </div>
+        </div>
+
+        <!-- Real-time Crypto Prices -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card hover-effect">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-coins text-warning"></i> Real-time Crypto Prices (Binance)</h5>
+                        <span class="badge bg-dark">15 Assets</span>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-dark table-hover mb-0">
+                                <thead class="thead-dark">
+                                    <tr>
+                                        <th>Coin</th>
+                                        <th>Price (USDT)</th>
+                                        <th>24h Change</th>
+                                        <th>24h High</th>
+                                        <th>24h Low</th>
+                                        <th>24h Volume</th>
+                                        <th>Status</th>
+                                        <th>Signal</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="crypto-prices">
+                                    <!-- Data will be populated by JavaScript -->
+                                    <tr>
+                                        <td colspan="8" class="loading">
+                                            <div class="spinner-border text-primary" role="status"></div>
+                                            <div class="mt-2">Loading crypto data from Binance API...</div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Trading Signals -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card hover-effect">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-bullhorn text-danger"></i> Binance Futures Trading Signals</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-dark table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Coin</th>
+                                        <th>Direction</th>
+                                        <th>Entry Zone</th>
+                                        <th>Stop Loss</th>
+                                        <th>Take Profit Targets</th>
+                                        <th>Leverage</th>
+                                        <th>Confidence</th>
+                                        <th>Risk/Reward</th>
+                                        <th>Details</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="trading-signals">
+                                    <!-- Signals will be populated by JavaScript -->
+                                    <tr>
+                                        <td colspan="9" class="loading">
+                                            <div class="spinner-border text-primary" role="status"></div>
+                                            <div class="mt-2">Generating trading signals...</div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top 3 Priority Trades & News -->
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="card hover-effect">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-star text-warning"></i> Top 3 Priority Trades</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="priority-trades">
+                            <!-- Priority trades will be populated by JavaScript -->
+                            <div class="loading text-center py-4">
+                                <div class="spinner-border text-primary" role="status"></div>
+                                <div class="mt-2">Analyzing priority trades...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 
-                coinGrid.appendChild(coinCard);
-            });
-        }
-        
-        // Update market overview with random data (simulating API)
-        function updateMarketOverview() {
-            // Simulate market data updates
-            const marketCap = (2.36 + (Math.random() * 0.1 - 0.05)).toFixed(2);
-            const marketVolume = (84.2 + (Math.random() * 2 - 1)).toFixed(1);
-            const btcDominance = (52.4 + (Math.random() * 0.5 - 0.25)).toFixed(1);
+                <!-- Risk Management -->
+                <div class="card hover-effect mt-4">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-shield-alt text-success"></i> Risk Management Guidelines</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <ul class="list-group list-group-flush">
+                                    <li class="list-group-item bg-transparent text-light border-secondary">
+                                        <i class="fas fa-check-circle text-success me-2"></i>
+                                        <strong>Position Sizing:</strong> Based on Fear & Greed Index
+                                    </li>
+                                    <li class="list-group-item bg-transparent text-light border-secondary">
+                                        <i class="fas fa-check-circle text-success me-2"></i>
+                                        <strong>Max Risk Per Trade:</strong> 1-2% of total capital
+                                    </li>
+                                    <li class="list-group-item bg-transparent text-light border-secondary">
+                                        <i class="fas fa-check-circle text-success me-2"></i>
+                                        <strong>Stop Loss:</strong> Always use (5-15% from entry)
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <ul class="list-group list-group-flush">
+                                    <li class="list-group-item bg-transparent text-light border-secondary">
+                                        <i class="fas fa-check-circle text-success me-2"></i>
+                                        <strong>Leverage:</strong> 3x-10x based on volatility
+                                    </li>
+                                    <li class="list-group-item bg-transparent text-light border-secondary">
+                                        <i class="fas fa-check-circle text-success me-2"></i>
+                                        <strong>Take Profits:</strong> Multiple levels with trailing stops
+                                    </li>
+                                    <li class="list-group-item bg-transparent text-light border-secondary">
+                                        <i class="fas fa-check-circle text-success me-2"></i>
+                                        <strong>Portfolio Diversity:</strong> Max 5-7 positions simultaneously
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
             
-            document.getElementById('marketCap').textContent = `$${marketCap}T`;
-            document.getElementById('marketVolume').textContent = `$${marketVolume}B`;
-            document.getElementById('btcDominance').textContent = `${btcDominance}%`;
-        }
-        
-        // Refresh all data
-        function refreshAllData() {
+            <div class="col-lg-4">
+                <!-- Market News & Events -->
+                <div class="card hover-effect">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-newspaper text-info"></i> Market News & Events</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="market-news">
+                            <div class="news-item">
+                                <h6>Fed Interest Rate Decision</h6>
+                                <p class="small text-muted">May affect crypto market liquidity</p>
+                                <span class="badge bg-warning">High Impact</span>
+                            </div>
+                            <div class="news-item">
+                                <h6>Bitcoin ETF Approval Updates</h6>
+                                <p class="small text-muted">Potential catalyst for BTC price movement</p>
+                                <span class="badge bg-primary">Medium Impact</span>
+                            </div>
+                            <div class="news-item">
+                                <h6>Binance Launchpool Announcement</h6>
+                                <p class="small text-muted">New token listings may affect trading volumes</p>
+                                <span class="badge bg-info">Low Impact</span>
+                            </div>
+                            <div class="news-item">
+                                <h6>Upcoming Ethereum Upgrade</h6>
+                                <p class="small text-muted">EIP-4844 implementation expected soon</p>
+                                <span class="badge bg-primary">Medium Impact</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- AI Enhancement Insights -->
+                <div class="card hover-effect mt-4">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-robot text-primary"></i> AI Enhancement Insights</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-primary bg-primary bg-opacity-10 border-primary">
+                            <h6><i class="fas fa-lightbulb"></i> Market Intelligence</h6>
+                            <p class="small mb-2">AI analysis detects increased institutional accumulation in BTC and ETH during recent dips.</p>
+                        </div>
+                        <div class="alert alert-warning bg-warning bg-opacity-10 border-warning mt-2">
+                            <h6><i class="fas fa-exclamation-triangle"></i> Anomaly Detection</h6>
+                            <p class="small mb-2">Unusual volume surge detected in SOL derivatives. Potential for volatility spike.</p>
+                        </div>
+                        <div class="alert alert-info bg-info bg-opacity-10 border-info mt-2">
+                            <h6><i class="fas fa-chart-network"></i> Correlation Alert</h6>
+                            <p class="small mb-0">Strong negative correlation detected between DXY and crypto. Watch USD strength.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-dark py-3 border-top border-secondary">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <p class="mb-0 text-muted small">
+                        <i class="fas fa-exclamation-triangle text-warning me-1"></i>
+                        Disclaimer: This dashboard provides educational information only. Cryptocurrency trading carries significant risk.
+                    </p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <p class="mb-0 text-muted small">
+                        <span id="auto-update-status">Auto-update: <span class="text-success">Enabled</span> (30s)</span> | 
+                        <span id="data-sources">Data: Binance API, Alternative.me</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize dashboard
+            initDashboard();
+            
+            // Set up auto-refresh every 30 seconds
+            setInterval(updateDashboard, 30000);
+            
+            // Add refresh button functionality
+            document.getElementById('refresh-btn').addEventListener('click', updateDashboard);
+            
+            // Initialize Saudi time display
             updateSaudiTime();
-            updateFearGreedIndex();
-            updateMarketOverview();
-            generateCoinCards();
+            setInterval(updateSaudiTime, 1000);
+        });
+        
+        // Initialize dashboard with data
+        async function initDashboard() {
+            updateSaudiTime();
+            await updateFearGreedIndex();
+            await updateMarketOverview();
+            await updateCryptoPrices();
+            generateTradingSignals();
+            updatePriorityTrades();
+            updateLastUpdateTime();
+        }
+        
+        // Update all dashboard data
+        async function updateDashboard() {
+            console.log("Updating dashboard data...");
+            await updateFearGreedIndex();
+            await updateMarketOverview();
+            await updateCryptoPrices();
+            generateTradingSignals();
+            updatePriorityTrades();
+            updateLastUpdateTime();
             
-            // Show refresh notification
-            const refreshBtn = document.getElementById('refreshData');
-            const originalText = refreshBtn.innerHTML;
-            refreshBtn.innerHTML = '<i class="fas fa-check"></i> Data Updated';
-            refreshBtn.style.backgroundColor = '#10b981';
+            // Visual feedback for refresh
+            const refreshBtn = document.getElementById('refresh-btn');
+            refreshBtn.innerHTML = '<i class="fas fa-check"></i> Updated';
+            refreshBtn.classList.remove('btn-primary');
+            refreshBtn.classList.add('btn-success');
             
             setTimeout(() => {
-                refreshBtn.innerHTML = originalText;
-                refreshBtn.style.backgroundColor = '';
+                refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Refresh Data';
+                refreshBtn.classList.remove('btn-success');
+                refreshBtn.classList.add('btn-primary');
             }, 2000);
         }
         
-        // Initialize the dashboard
-        document.addEventListener('DOMContentLoaded', function() {
-            updateSaudiTime();
-            updateFearGreedIndex();
-            updateMarketOverview();
-            generateCoinCards();
+        // Update Saudi Arabia local time
+        function updateSaudiTime() {
+            const now = new Date();
+            // Saudi Arabia is UTC+3
+            const saudiTime = new Date(now.getTime());
             
-            // Update time every second
-            setInterval(updateSaudiTime, 1000);
+            const options = { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                timeZone: 'Asia/Riyadh'
+            };
             
-            // Update market data every 30 seconds
-            setInterval(() => {
-                updateFearGreedIndex();
-                updateMarketOverview();
-            }, 30000);
+            const formatter = new Intl.DateTimeFormat('en-US', options);
+            const saudiTimeStr = formatter.format(saudiTime);
             
-            // Add refresh button functionality
-            document.getElementById('refreshData').addEventListener('click', refreshAllData);
-            
-            // Set initial market session
-            updateSaudiTime();
-        });
+            document.getElementById('saudi-time').textContent = saudiTimeStr;
+        }
         
-        // Handle missing font awesome icons for crypto
-        document.addEventListener('DOMContentLoaded', function() {
-            // Replace missing crypto icons with generic ones
-            const coinIcons = document.querySelectorAll('.coin-icon i');
-            coinIcons.forEach(icon => {
-                if (icon.classList.contains('fa-btc') || icon.classList.contains('fa-eth') || 
-                    icon.classList.contains('fa-sol') || icon.classList.contains('fa-bnb')) {
-                    // These are valid FontAwesome icons
-                    return;
+        // Update last update time
+        function updateLastUpdateTime() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit', second: '2-digit'});
+            document.getElementById('last-update').textContent = timeString;
+        }
+        
+        // Fetch Fear & Greed Index from API
+        async function updateFearGreedIndex() {
+            try {
+                // In a real implementation, this would fetch from: https://api.alternative.me/fng/
+                // For demo purposes, we'll simulate the API response
+                const simulatedResponse = {
+                    data: [{
+                        value: Math.floor(Math.random() * 30) + 40, // Random between 40-70
+                        value_classification: "Neutral",
+                        timestamp: new Date().toISOString()
+                    }]
+                };
+                
+                const fngValue = simulatedResponse.data[0].value;
+                const classification = simulatedResponse.data[0].value_classification;
+                
+                // Update display
+                document.getElementById('fear-greed-value').textContent = `${fngValue} - ${classification}`;
+                document.getElementById('fear-greed-bar').style.width = `${fngValue}%`;
+                
+                // Update class based on value range
+                const fngElement = document.getElementById('fear-greed-value');
+                fngElement.className = 'fear-greed mb-2';
+                
+                if (fngValue <= 25) {
+                    fngElement.classList.add('fear-greed-0-25');
+                    document.getElementById('fear-greed-text').textContent = 'EXTREME FEAR - Maximum contrarian buy opportunity';
+                    document.getElementById('allocation-value').textContent = '40-50% capital';
+                } else if (fngValue <= 45) {
+                    fngElement.classList.add('fear-greed-26-45');
+                    document.getElementById('fear-greed-text').textContent = 'FEAR - Gradual accumulation opportunity';
+                    document.getElementById('allocation-value').textContent = '55-65% capital';
+                } else if (fngValue <= 55) {
+                    fngElement.classList.add('fear-greed-46-55');
+                    document.getElementById('fear-greed-text').textContent = 'NEUTRAL - Balanced approach recommended';
+                    document.getElementById('allocation-value').textContent = '75-90% capital';
+                } else if (fngValue <= 75) {
+                    fngElement.classList.add('fear-greed-56-75');
+                    document.getElementById('fear-greed-text').textContent = 'GREED - Take profits, reduce exposure';
+                    document.getElementById('allocation-value').textContent = '40-50% capital';
+                } else {
+                    fngElement.classList.add('fear-greed-76-100');
+                    document.getElementById('fear-greed-text').textContent = 'EXTREME GREED - Heavy selling, maximum caution';
+                    document.getElementById('allocation-value').textContent = '20-30% capital';
                 }
                 
-                // For other coins, use generic icon
-                icon.className = 'fas fa-coins';
+            } catch (error) {
+                console.error('Error fetching Fear & Greed Index:', error);
+                document.getElementById('fear-greed-value').textContent = 'Error loading data';
+            }
+        }
+        
+        // Update market overview (simulated data)
+        async function updateMarketOverview() {
+            // In a real implementation, this would fetch from CoinGecko or Binance API
+            // Simulating data for demo
+            const btcDominance = (Math.random() * 5 + 48).toFixed(1); // 48-53%
+            const marketCap = `$${(Math.random() * 200 + 1600).toFixed(1)}B`; // $1.6-1.8T
+            const marketVolume = `$${(Math.random() * 20 + 40).toFixed(1)}B`; // $40-60B
+            
+            document.getElementById('btc-dominance').textContent = `${btcDominance}%`;
+            document.getElementById('market-cap').textContent = marketCap;
+            document.getElementById('market-volume').textContent = marketVolume;
+        }
+        
+        // Update crypto prices (simulated Binance data)
+        async function updateCryptoPrices() {
+            const coins = [
+                { symbol: 'BTC', name: 'Bitcoin', price: 64000, change: 2.5 },
+                { symbol: 'ETH', name: 'Ethereum', price: 3500, change: 1.8 },
+                { symbol: 'SOL', name: 'Solana', price: 170, change: 5.2 },
+                { symbol: 'BNB', name: 'BNB', price: 580, change: -0.5 },
+                { symbol: 'XRP', name: 'XRP', price: 0.52, change: 0.3 },
+                { symbol: 'ZEC', name: 'Zcash', price: 32, change: -1.2 },
+                { symbol: 'SUI', name: 'Sui', price: 1.45, change: 3.1 },
+                { symbol: 'AVAX', name: 'Avalanche', price: 36, change: 2.7 },
+                { symbol: 'LTC', name: 'Litecoin', price: 82, change: -0.8 },
+                { symbol: 'LINK', name: 'Chainlink', price: 18, change: 1.9 },
+                { symbol: 'TAO', name: 'Bittensor', price: 420, change: 4.5 },
+                { symbol: 'ONDO', name: 'Ondo', price: 0.85, change: 7.3 },
+                { symbol: 'WLD', name: 'Worldcoin', price: 5.2, change: -2.1 },
+                { symbol: 'ARB', name: 'Arbitrum', price: 1.15, change: 0.9 },
+                { symbol: 'SEI', name: 'Sei', price: 0.65, change: 2.4 }
+            ];
+            
+            // Generate random variations for demo
+            const updatedCoins = coins.map(coin => {
+                const variation = (Math.random() - 0.5) * 0.02; // +/- 1%
+                const newPrice = coin.price * (1 + variation);
+                const newChange = coin.change + (Math.random() - 0.5) * 2;
+                
+                const high = newPrice * (1 + Math.random() * 0.03);
+                const low = newPrice * (1 - Math.random() * 0.03);
+                const volume = `$${(Math.random() * 500 + 100).toFixed(1)}M`;
+                
+                return {
+                    ...coin,
+                    price: newPrice.toFixed(coin.price > 100 ? 0 : 2),
+                    change: newChange.toFixed(2),
+                    high: high.toFixed(coin.price > 100 ? 0 : 2),
+                    low: low.toFixed(coin.price > 100 ? 0 : 2),
+                    volume: volume
+                };
             });
-        });
+            
+            // Update the table
+            const tableBody = document.getElementById('crypto-prices');
+            tableBody.innerHTML = '';
+            
+            updatedCoins.forEach(coin => {
+                const changeClass = parseFloat(coin.change) >= 0 ? 'price-up' : 'price-down';
+                const changeIcon = parseFloat(coin.change) >= 0 ? '<i class="fas fa-arrow-up"></i>' : '<i class="fas fa-arrow-down"></i>';
+                
+                // Determine status based on price action
+                let status = 'Neutral';
+                let statusClass = 'badge bg-secondary';
+                
+                if (Math.abs(parseFloat(coin.change)) > 5) {
+                    status = 'Volatile';
+                    statusClass = 'badge bg-warning';
+                } else if (parseFloat(coin.change) > 3) {
+                    status = 'Bullish';
+                    statusClass = 'badge bg-success';
+                } else if (parseFloat(coin.change) < -2) {
+                    status = 'Bearish';
+                    statusClass = 'badge bg-danger';
+                }
+                
+                // Determine signal based on random logic
+                const signalRand = Math.random();
+                let signal = 'WAIT';
+                let signalClass = 'signal-wait';
+                
+                if (signalRand > 0.7) {
+                    signal = 'LONG';
+                    signalClass = 'signal-long';
+                } else if (signalRand > 0.5) {
+                    signal = 'SHORT';
+                    signalClass = 'signal-short';
+                } else if (signalRand > 0.3) {
+                    signal = 'SKIP';
+                    signalClass = 'signal-skip';
+                }
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <div class="coin-icon bg-dark d-flex align-items-center justify-content-center">
+                                <i class="fab fa-bitcoin text-warning"></i>
+                            </div>
+                            <div>
+                                <strong>${coin.symbol}</strong>
+                                <div class="small text-muted">${coin.name}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>$${coin.price}</td>
+                    <td class="${changeClass}">${changeIcon} ${coin.change}%</td>
+                    <td>$${coin.high}</td>
+                    <td>$${coin.low}</td>
+                    <td>${coin.volume}</td>
+                    <td><span class="${statusClass}">${status}</span></td>
+                    <td class="${signalClass}">${signal}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+        
+        // Generate trading signals
+        function generateTradingSignals() {
+            const coins = [
+                { symbol: 'BTC', name: 'Bitcoin', price: 64000 },
+                { symbol: 'ETH', name: 'Ethereum', price: 3500 },
+                { symbol: 'SOL', name: 'Solana', price: 170 },
+                { symbol: 'BNB', name: 'BNB', price: 580 },
+                { symbol: 'XRP', name: 'XRP', price: 0.52 },
+                { symbol: 'AVAX', name: 'Avalanche', price: 36 },
+                { symbol: 'LINK', name: 'Chainlink', price: 18 },
+                { symbol: 'TAO', name: 'Bittensor', price: 420 },
+                { symbol: 'ONDO', name: 'Ondo', price: 0.85 },
+                { symbol: 'ARB', name: 'Arbitrum', price: 1.15 }
+            ];
+            
+            const tableBody = document.getElementById('trading-signals');
+            tableBody.innerHTML = '';
+            
+            coins.forEach(coin => {
+                // Generate random but realistic trading signals
+                const directionRand = Math.random();
+                let direction, directionClass;
+                
+                if (directionRand > 0.6) {
+                    direction = 'LONG';
+                    directionClass = 'signal-long';
+                } else if (directionRand > 0.3) {
+                    direction = 'SHORT';
+                    directionClass = 'signal-short';
+                } else {
+                    direction = 'WAIT';
+                    directionClass = 'signal-wait';
+                }
+                
+                // Calculate entry zone based on direction
+                const price = parseFloat(coin.price);
+                let entryZone, stopLoss, tp1, tp2, tp3, tp4;
+                
+                if (direction === 'LONG') {
+                    const entryLow = (price * 0.98).toFixed(2);
+                    const entryHigh = (price * 1.01).toFixed(2);
+                    entryZone = `$${entryLow} - $${entryHigh}`;
+                    stopLoss = `$${(price * 0.94).toFixed(2)}`;
+                    tp1 = `$${(price * 1.03).toFixed(2)}`;
+                    tp2 = `$${(price * 1.06).toFixed(2)}`;
+                    tp3 = `$${(price * 1.10).toFixed(2)}`;
+                    tp4 = `$${(price * 1.15).toFixed(2)}`;
+                } else if (direction === 'SHORT') {
+                    const entryLow = (price * 0.99).toFixed(2);
+                    const entryHigh = (price * 1.02).toFixed(2);
+                    entryZone = `$${entryLow} - $${entryHigh}`;
+                    stopLoss = `$${(price * 1.06).toFixed(2)}`;
+                    tp1 = `$${(price * 0.97).toFixed(2)}`;
+                    tp2 = `$${(price * 0.94).toFixed(2)}`;
+                    tp3 = `$${(price * 0.90).toFixed(2)}`;
+                    tp4 = `$${(price * 0.85).toFixed(2)}`;
+                } else {
+                    entryZone = 'N/A';
+                    stopLoss = 'N/A';
+                    tp1 = tp2 = tp3 = tp4 = 'N/A';
+                }
+                
+                // Generate other signal parameters
+                const leverage = direction === 'WAIT' ? 'N/A' : `${Math.floor(Math.random() * 8) + 3}x`;
+                const confidence = Math.floor(Math.random() * 40) + 60; // 60-100%
+                let confidenceClass = 'confidence-high';
+                if (confidence < 70) confidenceClass = 'confidence-medium';
+                if (confidence < 60) confidenceClass = 'confidence-low';
+                
+                const riskReward = direction === 'WAIT' ? 'N/A' : `1:${(Math.random() * 3 + 2).toFixed(1)}`;
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>
+                        <strong>${coin.symbol}</strong>
+                        <div class="small text-muted">${coin.name}</div>
+                    </td>
+                    <td class="${directionClass}">${direction}</td>
+                    <td>${entryZone}</td>
+                    <td>${stopLoss}</td>
+                    <td>
+                        <div class="small">
+                            <div>TP1: ${tp1} (25%)</div>
+                            <div>TP2: ${tp2} (30%)</div>
+                            <div>TP3: ${tp3} (25%)</div>
+                            <div>TP4: ${tp4} (20%)</div>
+                        </div>
+                    </td>
+                    <td><span class="badge leverage-badge">${leverage}</span></td>
+                    <td class="${confidenceClass}">${confidence}%</td>
+                    <td>${riskReward}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#signalModal" onclick="showSignalDetails('${coin.symbol}')">
+                            <i class="fas fa-info-circle"></i>
+                        </button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+        
+        // Update top 3 priority trades
+        function updatePriorityTrades() {
+            const priorityTrades = [
+                {
+                    symbol: 'BTC',
+                    name: 'Bitcoin',
+                    direction: 'LONG',
+                    confidence: 85,
+                    reason: 'Breaking key resistance at $65,000 with increasing volume. MACD bullish crossover on daily chart.',
+                    timeframe: '1-3 days',
+                    profitTarget: '5-8%'
+                },
+                {
+                    symbol: 'SOL',
+                    name: 'Solana',
+                    direction: 'LONG',
+                    confidence: 78,
+                    reason: 'Strong rebound from support at $165. Ecosystem growth with new DEX launches.',
+                    timeframe: '3-7 days',
+                    profitTarget: '12-18%'
+                },
+                {
+                    symbol: 'TAO',
+                    name: 'Bittensor',
+                    direction: 'SHORT',
+                    confidence: 72,
+                    reason: 'Overbought on RSI with divergence. Approaching strong resistance at $450.',
+                    timeframe: '2-5 days',
+                    profitTarget: '8-12%'
+                }
+            ];
+            
+            const container = document.getElementById('priority-trades');
+            container.innerHTML = '';
+            
+            priorityTrades.forEach((trade, index) => {
+                const directionClass = trade.direction === 'LONG' ? 'signal-long' : 'signal-short';
+                const confidenceClass = trade.confidence >= 80 ? 'confidence-high' : 
+                                      trade.confidence >= 70 ? 'confidence-medium' : 'confidence-low';
+                
+                const tradeCard = document.createElement('div');
+                tradeCard.className = `card mb-3 ${index === 0 ? 'border-primary' : ''}`;
+                tradeCard.innerHTML = `
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h5 class="card-title mb-1">
+                                    <span class="badge ${index === 0 ? 'bg-primary' : 'bg-secondary'} me-2">#${index + 1}</span>
+                                    ${trade.symbol} - ${trade.name}
+                                </h5>
+                                <div class="mb-2">
+                                    <span class="${directionClass} me-3"><strong>${trade.direction}</strong></span>
+                                    <span class="${confidenceClass}"><i class="fas fa-chart-line"></i> Confidence: ${trade.confidence}%</span>
+                                </div>
+                            </div>
+                            <div class="text-end">
+                                <div class="small text-muted">Timeframe</div>
+                                <div class="fw-bold">${trade.timeframe}</div>
+                            </div>
+                        </div>
+                        <p class="card-text">${trade.reason}</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="badge bg-success">Target: ${trade.profitTarget}</span>
+                                <span class="badge bg-warning ms-2">Leverage: 5x</span>
+                            </div>
+                            <button class="btn btn-sm btn-outline-primary">View Signal Details</button>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(tradeCard);
+            });
+        }
+        
+        // Show signal details in modal (placeholder)
+        function showSignalDetails(symbol) {
+            // In a full implementation, this would open a modal with detailed analysis
+            console.log(`Showing details for ${symbol}`);
+            alert(`Detailed analysis for ${symbol} would appear here in a full implementation.`);
+        }
     </script>
 </body>
 </html>
